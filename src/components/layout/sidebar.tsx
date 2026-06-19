@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, Heart, Inbox, TrendingUp } from "lucide-react"
+import { Home, Calendar, Heart, Inbox, TrendingUp, Sun, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -11,6 +11,11 @@ const navItems = [
   { href: "/calendar", icon: Calendar, label: "Calendário" },
   { href: "/us", icon: Heart, label: "Nós" },
   { href: "/goals", icon: TrendingUp, label: "Metas" },
+]
+
+const secondaryItems = [
+  { href: "/review", icon: Sun, label: "Domingo" },
+  { href: "/profile", icon: User, label: "Perfil" },
 ]
 
 export function Sidebar() {
@@ -49,6 +54,27 @@ export function Sidebar() {
             )
           })}
         </nav>
+
+        {/* Itens secundários */}
+        <div className="flex flex-col gap-1 w-full px-2 mt-2 pt-2" style={{ borderTop: "1px solid var(--card-border)" }}>
+          {secondaryItems.map(({ href, icon: Icon, label }) => {
+            const active = pathname === href
+            return (
+              <Link key={href} href={href}
+                className={cn(
+                  "flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-all text-center",
+                  !active && "hover:bg-[var(--muted)]"
+                )}
+                style={active
+                  ? { background: "var(--golden)", color: "white" }
+                  : { color: "var(--muted-foreground)" }
+                }>
+                <Icon size={17} />
+                <span className="text-[9px] font-medium leading-tight">{label}</span>
+              </Link>
+            )
+          })}
+        </div>
 
         <div className="mt-auto flex flex-col items-center gap-1">
           <div className="flex gap-1">
