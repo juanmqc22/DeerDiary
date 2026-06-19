@@ -2,10 +2,9 @@
 
 import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/page-header"
-import { Trash2, MoveRight, ArrowRight, Calendar, Plus } from "lucide-react"
+import { Trash2, MoveRight, ArrowRight, Calendar } from "lucide-react"
 import { useState } from "react"
 
-type Tab = "capture" | "someday"
 type InboxItem = { id: number; text: string; date: string }
 
 const initialInbox: InboxItem[] = [
@@ -15,18 +14,12 @@ const initialInbox: InboxItem[] = [
   { id: 4, text: "Comprar presente de aniversário da Lia", date: "há 2 dias" },
 ]
 
-const initialSomeday: InboxItem[] = [
-  { id: 1, text: "Fazer um curso de fotografia", date: "Jun 2026" },
-  { id: 2, text: "Aprender espanhol", date: "Mai 2026" },
-  { id: 3, text: "Criar podcast sobre mídias sociais", date: "Jun 2026" },
-  { id: 4, text: "Viagem ao Japão", date: "Mar 2026" },
-  { id: 5, text: "Montar home office definitivo", date: "Abr 2026" },
-]
-
 const areas = ["Trabalho", "Pós-grad", "Igreja", "Casa", "Eu"]
 const contexts = ["@computador", "@ligações", "@recados", "@casa", "@leitura"]
 
-function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: () => void }) {
+type Outcome = "action" | "project" | "someday" | "reference" | "trash" | null
+
+function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: (outcome: Outcome) => void }) {
   const [step, setStep] = useState<"actionable" | "type" | "details">("actionable")
   const [type, setType] = useState<string | null>(null)
   const [area, setArea] = useState("")
@@ -54,15 +47,15 @@ function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: () => void 
                 Sim, precisa de ação
               </button>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={onClose}
+                <button onClick={() => onClose("reference")}
                   className="py-3 rounded-2xl text-sm font-medium"
                   style={{ background: "var(--muted)", color: "var(--muted-foreground)" }}>
-                  Referência
+                  📁 Referência
                 </button>
-                <button onClick={onClose}
+                <button onClick={() => onClose("trash")}
                   className="py-3 rounded-2xl text-sm font-medium"
                   style={{ background: "var(--muted)", color: "var(--muted-foreground)" }}>
-                  Descartar
+                  🗑️ Descartar
                 </button>
               </div>
             </div>
@@ -87,7 +80,7 @@ function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: () => void 
                 <p className="text-sm font-semibold" style={{ color: "var(--golden)" }}>📁 Projeto</p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>Requer mais de uma ação</p>
               </button>
-              <button onClick={onClose}
+              <button onClick={() => onClose("someday")}
                 className="w-full p-3.5 rounded-2xl text-left border-2"
                 style={{ borderColor: "var(--card-border)", background: "var(--muted)" }}>
                 <p className="text-sm font-semibold" style={{ color: "var(--muted-foreground)" }}>🌙 Algum dia</p>
@@ -141,7 +134,7 @@ function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: () => void 
                 <input type="date" className="w-full text-sm p-2.5 rounded-xl outline-none"
                   style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
               </div>
-              <button onClick={onClose}
+              <button onClick={() => onClose(type === "action" ? "action" : "project")}
                 className="w-full py-3 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2"
                 style={{ background: "var(--sage)" }}>
                 <ArrowRight size={16} /> Organizar
@@ -150,7 +143,7 @@ function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: () => void 
           </>
         )}
 
-        <button onClick={onClose} className="w-full mt-3 py-2 text-xs"
+        <button onClick={() => onClose(null)} className="w-full mt-3 py-2 text-xs"
           style={{ color: "var(--muted-foreground)" }}>
           Cancelar
         </button>
@@ -159,12 +152,19 @@ function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: () => void 
   )
 }
 
+const outcomeMessages: Record<string, string> = {
+  action: "✅ Adicionado às próximas ações",
+  project: "📁 Adicionado aos projetos",
+  someday: "🌙 Guardado em Algum dia",
+  reference: "📎 Arquivado como referência",
+  trash: "🗑️ Descartado",
+}
+
 export default function InboxPage() {
-  const [tab, setTab] = useState<Tab>("capture")
   const [inbox, setInbox] = useState(initialInbox)
-  const [someday, setSomeday] = useState(initialSomeday)
   const [input, setInput] = useState("")
   const [clarifying, setClarifying] = useState<InboxItem | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   const addInbox = () => {
     if (!input.trim()) return
@@ -172,132 +172,77 @@ export default function InboxPage() {
     setInput("")
   }
 
-  const addSomeday = () => {
-    if (!input.trim()) return
-    const now = new Date().toLocaleDateString("pt-BR", { month: "short", year: "numeric" })
-    setSomeday(i => [{ id: Date.now(), text: input.trim(), date: now }, ...i])
-    setInput("")
+  const handleProcessed = (outcome: Outcome) => {
+    if (!clarifying) return
+    if (outcome !== null) {
+      setInbox(i => i.filter(x => x.id !== clarifying.id))
+      setToast(outcomeMessages[outcome])
+      setTimeout(() => setToast(null), 3000)
+    }
+    setClarifying(null)
   }
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Inbox" subtitle="Mente limpa começa aqui 🧠" />
+      <PageHeader title="Inbox" subtitle="Capture tudo, decida depois 🧠" />
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "var(--muted)" }}>
-        {([
-          { id: "capture", label: `Captura ${inbox.length > 0 ? `(${inbox.length})` : ""}` },
-          { id: "someday", label: "Algum dia" },
-        ] as { id: Tab; label: string }[]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all"
-            style={{
-              background: tab === t.id ? "var(--card)" : "transparent",
-              color: tab === t.id ? "var(--warm-brown)" : "var(--muted-foreground)",
-              boxShadow: tab === t.id ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-            }}>
-            {t.label}
+      <Card className="p-3">
+        <textarea value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), addInbox())}
+          placeholder="O que está na sua cabeça agora?"
+          className="w-full text-sm resize-none outline-none bg-transparent"
+          style={{ color: "var(--foreground)", minHeight: 60 }} />
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>Enter para salvar</span>
+          <button onClick={addInbox}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white"
+            style={{ background: "var(--soft-orange)" }}>
+            Capturar
           </button>
-        ))}
-      </div>
-
-      {/* Captura */}
-      {tab === "capture" && (
-        <div className="space-y-4">
-          <Card className="p-3">
-            <textarea value={input} onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), addInbox())}
-              placeholder="O que está na sua cabeça agora?"
-              className="w-full text-sm resize-none outline-none bg-transparent"
-              style={{ color: "var(--foreground)", minHeight: 60 }} />
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>Enter para salvar</span>
-              <button onClick={addInbox}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white"
-                style={{ background: "var(--soft-orange)" }}>
-                Capturar
-              </button>
-            </div>
-          </Card>
-
-          {inbox.length > 0 ? (
-            <div className="space-y-2">
-              {inbox.map(item => (
-                <Card key={item.id} className="flex items-center gap-3 group">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{item.date}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button onClick={() => setClarifying(item)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white"
-                      style={{ background: "var(--soft-orange)" }}>
-                      <MoveRight size={12} /> Processar
-                    </button>
-                    <button onClick={() => setInbox(i => i.filter(x => x.id !== item.id))}
-                      className="p-1.5 rounded-lg hover:bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all"
-                      style={{ color: "var(--dusty-rose)" }}>
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-4xl mb-2">🌿</p>
-              <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>Inbox limpo!</p>
-              <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>Mente livre é mente criativa.</p>
-            </div>
-          )}
         </div>
-      )}
+      </Card>
 
-      {/* Algum dia */}
-      {tab === "someday" && (
-        <div className="space-y-4">
-          <Card className="p-3">
-            <div className="flex gap-2 items-center">
-              <input value={input} onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && addSomeday()}
-                placeholder="Uma ideia, um sonho, algo para o futuro..."
-                className="flex-1 text-sm outline-none bg-transparent"
-                style={{ color: "var(--foreground)" }} />
-              <button onClick={addSomeday}
-                className="p-2 rounded-xl text-white flex-shrink-0"
-                style={{ background: "var(--lavender)" }}>
-                <Plus size={15} />
-              </button>
-            </div>
-          </Card>
-
-          <div className="space-y-2">
-            {someday.map(item => (
-              <Card key={item.id} className="flex items-center gap-3 group">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{item.date}</p>
-                </div>
-                <button onClick={() => setSomeday(i => i.filter(x => x.id !== item.id))}
-                  className="p-1.5 rounded-lg hover:bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+      {inbox.length > 0 ? (
+        <div className="space-y-2">
+          {inbox.map(item => (
+            <Card key={item.id} className="flex items-center gap-3 group">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{item.date}</p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button onClick={() => setClarifying(item)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white"
+                  style={{ background: "var(--soft-orange)" }}>
+                  <MoveRight size={12} /> Processar
+                </button>
+                <button onClick={() => setInbox(i => i.filter(x => x.id !== item.id))}
+                  className="p-1.5 rounded-lg hover:bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all"
                   style={{ color: "var(--dusty-rose)" }}>
                   <Trash2 size={13} />
                 </button>
-              </Card>
-            ))}
-          </div>
-
-          <p className="text-xs text-center" style={{ color: "var(--muted-foreground)" }}>
-            💡 Revise na revisão de domingo
-          </p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-4xl mb-2">🌿</p>
+          <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>Inbox limpo!</p>
+          <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>Mente livre é mente criativa.</p>
         </div>
       )}
 
       {clarifying && (
-        <ClarifyModal item={clarifying} onClose={() => {
-          setInbox(i => i.filter(x => x.id !== clarifying.id))
-          setClarifying(null)
-        }} />
+        <ClarifyModal item={clarifying} onClose={handleProcessed} />
+      )}
+
+      {/* Toast de confirmação */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-medium text-white shadow-lg"
+          style={{ background: "var(--warm-brown)" }}>
+          {toast}
+        </div>
       )}
     </div>
   )

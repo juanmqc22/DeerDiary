@@ -2,10 +2,18 @@
 
 import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/page-header"
-import { CheckCircle2, Circle, Plus, FolderOpen } from "lucide-react"
+import { CheckCircle2, Circle, Plus, FolderOpen, Trash2 } from "lucide-react"
 import { useState } from "react"
 
-type Tab = "actions" | "projects"
+type Tab = "actions" | "projects" | "someday"
+
+const initialSomeday = [
+  { id: 1, text: "Fazer um curso de fotografia", date: "Jun 2026" },
+  { id: 2, text: "Aprender espanhol", date: "Mai 2026" },
+  { id: 3, text: "Criar podcast sobre mídias sociais", date: "Jun 2026" },
+  { id: 4, text: "Viagem ao Japão", date: "Mar 2026" },
+  { id: 5, text: "Montar home office definitivo", date: "Abr 2026" },
+]
 
 const actions = [
   { id: 1, title: "Enviar relatório mensal — cliente A", context: "@computador", area: "Trabalho", areaColor: "var(--lavender)", done: false },
@@ -49,6 +57,7 @@ const contexts = ["@computador", "@ligações", "@recados", "@casa"]
 export default function TasksPage() {
   const [tab, setTab] = useState<Tab>("actions")
   const [items, setItems] = useState(actions)
+  const [someday, setSomeday] = useState(initialSomeday)
   const [context, setContext] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
 
@@ -73,13 +82,17 @@ export default function TasksPage() {
     <div className="space-y-5">
       <PageHeader
         title="Tarefas"
-        subtitle={tab === "actions" ? `${pending} ações abertas` : `${projects.length} projetos ativos`}
-        action={
+        subtitle={
+          tab === "actions" ? `${pending} ações abertas` :
+          tab === "projects" ? `${projects.length} projetos ativos` :
+          `${someday.length} ideias guardadas`
+        }
+        action={tab !== "someday" ? (
           <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
             style={{ background: "var(--soft-orange)" }}>
             <Plus size={15} /> {tab === "actions" ? "Nova ação" : "Novo projeto"}
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Tabs */}
@@ -87,6 +100,7 @@ export default function TasksPage() {
         {([
           { id: "actions", label: "Ações" },
           { id: "projects", label: "Projetos" },
+          { id: "someday", label: "Algum dia" },
         ] as { id: Tab; label: string }[]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all"
@@ -208,6 +222,30 @@ export default function TasksPage() {
             style={{ border: "2px dashed var(--card-border)", color: "var(--muted-foreground)" }}>
             <FolderOpen size={16} /> Novo projeto
           </button>
+        </div>
+      )}
+
+      {/* Algum dia */}
+      {tab === "someday" && (
+        <div className="space-y-3">
+          <div className="space-y-2">
+            {someday.map(item => (
+              <Card key={item.id} className="flex items-center gap-3 group">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{item.date}</p>
+                </div>
+                <button onClick={() => setSomeday(s => s.filter(x => x.id !== item.id))}
+                  className="p-1.5 rounded-lg hover:bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+                  style={{ color: "var(--dusty-rose)" }}>
+                  <Trash2 size={13} />
+                </button>
+              </Card>
+            ))}
+          </div>
+          <p className="text-xs text-center pt-2" style={{ color: "var(--muted-foreground)" }}>
+            💡 Revise esses itens na revisão de domingo
+          </p>
         </div>
       )}
     </div>
