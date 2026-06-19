@@ -28,10 +28,10 @@ export default function Home() {
         <div className="flex flex-col items-center mb-2" style={{ animation: "fadeIn 0.6s ease forwards" }}>
           {/* Cervo SVG simples */}
           <div className="mb-3">
-            <DeerLogo />
+            <DearLogo />
           </div>
           <h1 className="text-5xl font-bold tracking-tight" style={{ color: "var(--warm-brown)" }}>
-            DeerDiary
+            DearDiary
           </h1>
           <p className="mt-3 text-base text-center max-w-xs leading-relaxed" style={{ color: "#9a7a62" }}>
             A vida de vocês dois,<br />organizada com amor 🌿
@@ -76,7 +76,7 @@ export default function Home() {
   )
 }
 
-function DeerLogo() {
+function DearLogo() {
   return (
     <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
       {/* Corpo */}

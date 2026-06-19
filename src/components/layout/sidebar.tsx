@@ -45,7 +45,7 @@ export function Sidebar() {
         style={{ background: "var(--card)", borderRight: "1px solid var(--card-border)" }}>
 
         <Link href="/" className="mb-3 flex flex-col items-center">
-          <DeerIcon />
+          <DearIcon />
         </Link>
 
         <nav className="flex flex-col gap-0.5 w-full px-2">
@@ -105,7 +105,7 @@ export function Sidebar() {
   )
 }
 
-function DeerIcon() {
+function DearIcon() {
   return (
     <svg width="32" height="32" viewBox="0 0 72 72" fill="none">
       <ellipse cx="36" cy="46" rx="14" ry="10" fill="#8b5e3c" opacity="0.85" />
