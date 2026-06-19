@@ -26,7 +26,7 @@ export default function InboxPage() {
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold" style={{ color: "var(--warm-brown)" }}>Captura 🧠</h1>
+        <h1 className="text-2xl md:text-3xl font-bold" style={{ color: "var(--warm-brown)" }}>Captura 🧠</h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>
           Jogue tudo que está na sua cabeça aqui. Sem julgamento, sem organizar agora.
         </p>

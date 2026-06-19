@@ -1,6 +1,7 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
+import { GrowingPlant } from "@/components/ui/growing-plant"
 import { CheckCircle2, Circle, Plus, Flame, Star } from "lucide-react"
 import { useState } from "react"
 
@@ -19,6 +20,12 @@ const upcomingTasks = [
   { id: 4, title: "Compras da semana", done: false, dim: "Casa", color: "var(--dusty-rose)" },
 ]
 
+const goals = [
+  { label: "Pós-graduação", progress: 20, color: "#7a9e7e" },
+  { label: "Reserva financeira", progress: 55, color: "#d4a547" },
+  { label: "Bem-estar", progress: 70, color: "#e8845a" },
+]
+
 function getGreeting() {
   const h = new Date().getHours()
   if (h < 12) return "Bom dia"
@@ -28,140 +35,121 @@ function getGreeting() {
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState(upcomingTasks)
-
   const toggle = (id: number) =>
     setTasks(t => t.map(tk => tk.id === id ? { ...tk, done: !tk.done } : tk))
-
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
       {/* Header */}
-      <div className="mb-8">
-        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>{today}</p>
-        <h1 className="text-3xl font-bold mt-1" style={{ color: "var(--warm-brown)" }}>
+      <div className="mb-6">
+        <p className="text-sm capitalize" style={{ color: "var(--muted-foreground)" }}>{today}</p>
+        <h1 className="text-2xl md:text-3xl font-bold mt-1" style={{ color: "var(--warm-brown)" }}>
           {getGreeting()}, Baby 🌸
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>
-          Você tem 8 tarefas abertas hoje. Vai uma de cada vez 💛
+          Você tem 8 tarefas abertas hoje. Uma de cada vez 💛
         </p>
       </div>
 
-      {/* Streak + Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <Card className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-            style={{ background: "var(--muted)" }}>
-            <Flame size={20} style={{ color: "var(--soft-orange)" }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold" style={{ color: "var(--soft-orange)" }}>7</p>
-            <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>dias seguidos</p>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-            style={{ background: "var(--muted)" }}>
-            <CheckCircle2 size={20} style={{ color: "var(--sage)" }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold" style={{ color: "var(--sage)" }}>6</p>
-            <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>tarefas esta semana</p>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-            style={{ background: "var(--muted)" }}>
-            <Star size={20} style={{ color: "var(--golden)" }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold" style={{ color: "var(--golden)" }}>3</p>
-            <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>metas ativas</p>
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-3 gap-6">
-        {/* Dimensões */}
-        <div className="col-span-2">
-          <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
-            Dimensões da vida
-          </h2>
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {dimensions.map(dim => (
-              <Card key={dim.id} className="cursor-pointer hover:scale-[1.02] transition-transform">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{dim.emoji}</span>
-                    <span className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>{dim.name}</span>
-                  </div>
-                  <span className="text-xs px-2 py-1 rounded-full font-medium"
-                    style={{ background: dim.color + "22", color: dim.color }}>
-                    {dim.tasks - dim.done} abertas
-                  </span>
-                </div>
-                {/* Progress bar */}
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-                  <div className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${(dim.done / dim.tasks) * 100}%`,
-                      background: dim.color
-                    }} />
-                </div>
-                <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>
-                  {dim.done}/{dim.tasks} concluídas
-                </p>
-              </Card>
-            ))}
-          </div>
-
-          {/* Tarefas do dia */}
-          <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
-            Tarefas de hoje
-          </h2>
-          <Card>
-            <div className="flex flex-col gap-2">
-              {tasks.map(task => (
-                <button
-                  key={task.id}
-                  onClick={() => toggle(task.id)}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-[var(--muted)] transition-colors text-left w-full"
-                >
-                  {task.done
-                    ? <CheckCircle2 size={18} style={{ color: "var(--sage)", flexShrink: 0 }} />
-                    : <Circle size={18} style={{ color: "var(--card-border)", flexShrink: 0 }} />
-                  }
-                  <span className={`text-sm flex-1 ${task.done ? "line-through" : ""}`}
-                    style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
-                    {task.title}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: task.color + "22", color: task.color }}>
-                    {task.dim}
-                  </span>
-                </button>
-              ))}
-              <button className="flex items-center gap-2 p-2 rounded-xl hover:bg-[var(--muted)] transition-colors w-full mt-1"
-                style={{ color: "var(--muted-foreground)" }}>
-                <Plus size={16} />
-                <span className="text-sm">Adicionar tarefa</span>
-              </button>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-2 md:gap-3 mb-6">
+        {[
+          { icon: <Flame size={18} style={{ color: "var(--soft-orange)" }} />, value: "7", label: "dias seguidos", color: "var(--soft-orange)" },
+          { icon: <CheckCircle2 size={18} style={{ color: "var(--sage)" }} />, value: "6", label: "esta semana", color: "var(--sage)" },
+          { icon: <Star size={18} style={{ color: "var(--golden)" }} />, value: "3", label: "metas ativas", color: "var(--golden)" },
+        ].map((s, i) => (
+          <Card key={i} className="flex items-center gap-2 md:gap-3 p-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "var(--muted)" }}>{s.icon}</div>
+            <div className="min-w-0">
+              <p className="text-xl md:text-2xl font-bold leading-none" style={{ color: s.color }}>{s.value}</p>
+              <p className="text-[10px] md:text-xs mt-0.5 leading-tight" style={{ color: "var(--muted-foreground)" }}>{s.label}</p>
             </div>
           </Card>
+        ))}
+      </div>
+
+      {/* Grid principal */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="md:col-span-2 flex flex-col gap-4 md:gap-6">
+
+          {/* Dimensões */}
+          <div>
+            <h2 className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+              Dimensões da vida
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+              {dimensions.map(dim => (
+                <Card key={dim.id} className="cursor-pointer hover:scale-[1.02] transition-transform p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">{dim.emoji}</span>
+                      <span className="font-semibold text-xs" style={{ color: "var(--foreground)" }}>{dim.name}</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                      style={{ background: dim.color + "22", color: dim.color }}>
+                      {dim.tasks - dim.done}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
+                    <div className="h-full rounded-full transition-all"
+                      style={{ width: `${(dim.done / dim.tasks) * 100}%`, background: dim.color }} />
+                  </div>
+                  <p className="text-[10px] mt-1" style={{ color: "var(--muted-foreground)" }}>
+                    {dim.done}/{dim.tasks} feitas
+                  </p>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Tarefas */}
+          <div>
+            <h2 className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+              Tarefas de hoje
+            </h2>
+            <Card>
+              <div className="flex flex-col gap-1">
+                {tasks.map(task => (
+                  <button key={task.id} onClick={() => toggle(task.id)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[var(--muted)] transition-colors text-left w-full">
+                    {task.done
+                      ? <CheckCircle2 size={17} style={{ color: "var(--sage)", flexShrink: 0 }} />
+                      : <Circle size={17} style={{ color: "var(--card-border)", flexShrink: 0 }} />
+                    }
+                    <span className={`text-sm flex-1 ${task.done ? "line-through" : ""}`}
+                      style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
+                      {task.title}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full hidden sm:block"
+                      style={{ background: task.color + "22", color: task.color }}>
+                      {task.dim}
+                    </span>
+                  </button>
+                ))}
+                <button className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-[var(--muted)] transition-colors w-full"
+                  style={{ color: "var(--muted-foreground)" }}>
+                  <Plus size={15} />
+                  <span className="text-sm">Adicionar tarefa</span>
+                </button>
+              </div>
+            </Card>
+          </div>
         </div>
 
         {/* Coluna direita */}
         <div className="flex flex-col gap-4">
           {/* Inbox rápido */}
           <div>
-            <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+            <h2 className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
               O que está na cabeça?
             </h2>
             <Card>
               <textarea
                 placeholder="Capture aqui qualquer pensamento... ✨"
                 className="w-full text-sm resize-none outline-none bg-transparent"
-                style={{ color: "var(--foreground)", minHeight: 80 }}
+                style={{ color: "var(--foreground)", minHeight: 70 }}
               />
               <button className="w-full mt-2 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90"
                 style={{ background: "var(--soft-orange)" }}>
@@ -170,30 +158,27 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Metas — plantas crescendo */}
+          {/* Fazenda de metas com plantas SVG */}
           <div>
-            <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
-              Fazenda de metas 🌱
+            <h2 className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+              Fazenda de metas
             </h2>
-            <div className="flex flex-col gap-2">
-              {[
-                { label: "Pós-graduação", emoji: "🌳", progress: 20, color: "var(--sage)" },
-                { label: "Reserva financeira", emoji: "🌾", progress: 55, color: "var(--golden)" },
-                { label: "Saúde & bem-estar", emoji: "🌻", progress: 70, color: "var(--soft-orange)" },
-              ].map(goal => (
-                <Card key={goal.label} className="p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span>{goal.emoji}</span>
-                    <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>{goal.label}</span>
-                    <span className="ml-auto text-xs" style={{ color: "var(--muted-foreground)" }}>{goal.progress}%</span>
+            <Card>
+              <div className="flex justify-around items-end py-2">
+                {goals.map(goal => (
+                  <div key={goal.label} className="flex flex-col items-center gap-1">
+                    <GrowingPlant progress={goal.progress} color={goal.color} size={60} />
+                    <span className="text-[10px] text-center font-medium leading-tight"
+                      style={{ color: "var(--muted-foreground)", maxWidth: 56 }}>
+                      {goal.label}
+                    </span>
+                    <span className="text-[10px] font-bold" style={{ color: goal.color }}>
+                      {goal.progress}%
+                    </span>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-                    <div className="h-full rounded-full"
-                      style={{ width: `${goal.progress}%`, background: goal.color }} />
-                  </div>
-                </Card>
-              ))}
-            </div>
+                ))}
+              </div>
+            </Card>
           </div>
         </div>
       </div>
