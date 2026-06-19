@@ -1,7 +1,8 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, Circle, Clock, Users, Inbox as InboxIcon, ChevronRight } from "lucide-react"
+import { GrowingPlant } from "@/components/ui/growing-plant"
+import { CheckCircle2, Circle, Clock, Users, ChevronRight, Inbox as InboxIcon } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 
@@ -11,12 +12,12 @@ const todayEvents = [
 ]
 
 const nextActions = [
-  { id: 1, title: "Enviar relatório mensal — cliente A", context: "@computador", area: "Trabalho", areaColor: "var(--lavender)", done: false },
-  { id: 2, title: "Ligar para a coordenadora do programa", context: "@ligações", area: "Pós-grad", areaColor: "var(--golden)", done: false },
-  { id: 3, title: "Compras da semana", context: "@recados", area: "Casa", areaColor: "var(--dusty-rose)", done: false },
+  { id: 1, title: "Enviar relatório mensal — cliente A", context: "@computador", done: false },
+  { id: 2, title: "Ligar para a coordenadora do programa", context: "@ligações", done: false },
+  { id: 3, title: "Compras da semana", context: "@recados", done: false },
 ]
 
-function getGreeting() {
+function greeting() {
   const h = new Date().getHours()
   if (h < 12) return "Bom dia"
   if (h < 18) return "Boa tarde"
@@ -31,80 +32,81 @@ export default function Dashboard() {
   const isSunday = new Date().getDay() === 0
 
   return (
-    <div className="max-w-2xl mx-auto animate-fade-in">
-      {/* Header */}
-      <div className="mb-6">
-        <p className="text-sm capitalize" style={{ color: "var(--muted-foreground)" }}>{today}</p>
-        <h1 className="text-2xl md:text-3xl font-bold mt-0.5" style={{ color: "var(--warm-brown)" }}>
-          {getGreeting()}, Baby 🌸
+    <div className="space-y-5">
+      {/* Saudação */}
+      <div>
+        <p className="text-xs capitalize tracking-wide" style={{ color: "var(--muted-foreground)" }}>{today}</p>
+        <h1 className="text-2xl font-bold mt-0.5" style={{ color: "var(--warm-brown)" }}>
+          {greeting()}, Baby 🌸
         </h1>
       </div>
 
-      {/* Banner de domingo */}
+      {/* Banner domingo */}
       {isSunday && (
         <Link href="/review">
-          <div className="mb-4 p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:opacity-90 transition-opacity"
-            style={{ background: "linear-gradient(135deg, var(--sage)30, var(--golden)20)", border: "1px solid var(--sage)40" }}>
+          <Card className="flex items-center justify-between p-4 hover:scale-[1.01] transition-transform"
+            style={{ background: "linear-gradient(135deg, #7a9e7e18, #d4a54718)", borderColor: "var(--sage)" }}>
             <div>
               <p className="text-sm font-bold" style={{ color: "var(--warm-brown)" }}>É domingo! 🕊️</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>Hora da sua revisão semanal</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>Hora da revisão semanal</p>
             </div>
             <ChevronRight size={18} style={{ color: "var(--muted-foreground)" }} />
-          </div>
+          </Card>
         </Link>
       )}
 
       {/* Inbox badge */}
       <Link href="/inbox">
-        <div className="mb-4 p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
-          style={{ background: "var(--muted)", border: "1px solid var(--card-border)" }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+        <Card className="flex items-center gap-3 p-3 hover:scale-[1.01] transition-transform cursor-pointer">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: "var(--soft-orange)" }}>
-            <InboxIcon size={17} color="white" />
+            <InboxIcon size={16} color="white" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Inbox</p>
             <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>4 itens para processar</p>
           </div>
-          <ChevronRight size={16} style={{ color: "var(--muted-foreground)" }} />
-        </div>
+          <span className="text-xs font-bold px-2 py-1 rounded-full text-white flex-shrink-0"
+            style={{ background: "var(--soft-orange)" }}>4</span>
+        </Card>
       </Link>
 
-      {/* Hoje — compromissos */}
+      {/* Compromissos de hoje */}
       {todayEvents.length > 0 && (
-        <div className="mb-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--muted-foreground)" }}>
-            <Clock size={11} className="inline mr-1" />Compromissos de hoje
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5"
+            style={{ color: "var(--muted-foreground)" }}>
+            <Clock size={11} /> Compromissos de hoje
           </h2>
-          <div className="flex flex-col gap-2">
+          <div className="space-y-2">
             {todayEvents.map((ev, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-xl"
-                style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
-                <span className="text-xs font-mono font-semibold w-10 flex-shrink-0" style={{ color: ev.color }}>
+              <Card key={i} className="flex items-center gap-3 p-3">
+                <span className="text-xs font-mono font-bold w-11 flex-shrink-0" style={{ color: ev.color }}>
                   {ev.time}
                 </span>
-                <div className="w-px h-5 rounded-full" style={{ background: ev.color }} />
+                <div className="w-0.5 h-5 rounded-full flex-shrink-0" style={{ background: ev.color }} />
                 <span className="text-sm" style={{ color: "var(--foreground)" }}>{ev.title}</span>
-              </div>
+              </Card>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Next actions prioritárias */}
-      <div className="mb-4">
+      {/* Próximas ações */}
+      <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
             Próximas ações
           </h2>
-          <Link href="/next-actions" className="text-xs hover:underline" style={{ color: "var(--soft-orange)" }}>
-            Ver todas
+          <Link href="/next-actions" className="text-xs font-medium hover:underline"
+            style={{ color: "var(--soft-orange)" }}>
+            Ver todas →
           </Link>
         </div>
-        <Card className="p-1">
+        <Card className="divide-y" style={{ "--tw-divide-opacity": 1 } as React.CSSProperties}>
           {actions.map(action => (
             <button key={action.id} onClick={() => toggle(action.id)}
-              className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--muted)] transition-colors w-full text-left">
+              className="flex items-center gap-3 p-3 w-full text-left hover:bg-[var(--muted)] transition-colors first:rounded-t-xl last:rounded-b-xl">
               {action.done
                 ? <CheckCircle2 size={17} style={{ color: "var(--sage)", flexShrink: 0 }} />
                 : <Circle size={17} style={{ color: "var(--card-border)", flexShrink: 0 }} />
@@ -113,38 +115,66 @@ export default function Dashboard() {
                 style={{ color: action.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
                 {action.title}
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full hidden sm:block"
+              <span className="text-[10px] px-2 py-0.5 rounded-full hidden sm:block flex-shrink-0"
                 style={{ background: "var(--muted)", color: "var(--muted-foreground)" }}>
                 {action.context}
               </span>
             </button>
           ))}
         </Card>
-      </div>
+      </section>
 
       {/* Aguardando */}
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--muted-foreground)" }}>
-          <Users size={11} className="inline mr-1" />Aguardando resposta
+      <section>
+        <h2 className="text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5"
+          style={{ color: "var(--muted-foreground)" }}>
+          <Users size={11} /> Aguardando resposta
         </h2>
-        <Card>
+        <Card className="divide-y">
           {[
-            { title: "Proposta enviada — cliente B", who: "Cliente B", since: "há 2 dias" },
-            { title: "Aprovação do relatório", who: "Gerente", since: "hoje" },
+            { title: "Proposta enviada — cliente B", who: "Cliente B", since: "há 2 dias", color: "var(--lavender)" },
+            { title: "Aprovação do relatório", who: "Gerente", since: "hoje", color: "var(--golden)" },
           ].map((w, i) => (
             <div key={i} className="flex items-center gap-3 p-3">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                style={{ background: "var(--sky-blue)" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                style={{ background: w.color }}>
                 {w.who[0]}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm" style={{ color: "var(--foreground)" }}>{w.title}</p>
+                <p className="text-sm truncate" style={{ color: "var(--foreground)" }}>{w.title}</p>
                 <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{w.who} · {w.since}</p>
               </div>
             </div>
           ))}
         </Card>
-      </div>
+      </section>
+
+      {/* Fazenda resumo */}
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+            Fazenda de metas
+          </h2>
+          <Link href="/goals" className="text-xs font-medium hover:underline"
+            style={{ color: "var(--soft-orange)" }}>
+            Ver todas →
+          </Link>
+        </div>
+        <Card className="p-4">
+          <div className="flex justify-around items-end">
+            {[
+              { label: "Pós-grad", progress: 20, color: "#7a9e7e" },
+              { label: "Finanças", progress: 55, color: "#d4a547" },
+              { label: "Bem-estar", progress: 70, color: "#e8845a" },
+            ].map(g => (
+              <div key={g.label} className="flex flex-col items-center gap-1.5">
+                <GrowingPlant progress={g.progress} color={g.color} size={64} />
+                <span className="text-[10px] font-medium" style={{ color: "var(--muted-foreground)" }}>{g.label}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
     </div>
   )
 }

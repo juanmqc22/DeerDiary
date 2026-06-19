@@ -1,6 +1,7 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
+import { PageHeader } from "@/components/layout/page-header"
 import { GrowingPlant } from "@/components/ui/growing-plant"
 import { Plus } from "lucide-react"
 
@@ -29,110 +30,98 @@ const goals = [
     current: 14, target: 20, unit: "semanas", color: "#e8845a",
     milestones: ["1 mês de rotina ✅", "2 meses seguidos", "Hábito consolidado"],
   },
-  {
-    id: 5, label: "Leitura anual", scope: "Juan", scopeColor: "var(--sky-blue)",
-    description: "12 livros esse ano",
-    current: 5, target: 12, unit: "livros", color: "#9b8bc4",
-    milestones: ["3 livros ✅", "6 livros", "9 livros", "12 livros"],
-  },
 ]
 
-function getPlantLabel(pct: number) {
-  if (pct < 15) return "Semente plantada 🌰"
-  if (pct < 35) return "Brotando! 🌱"
-  if (pct < 60) return "Crescendo forte 🌿"
-  if (pct < 85) return "Quase lá! 🌳"
+function stageLabel(pct: number) {
+  if (pct < 15) return "Semente plantada"
+  if (pct < 35) return "Brotando!"
+  if (pct < 60) return "Crescendo"
+  if (pct < 85) return "Quase lá!"
   return "Floresceu! 🌸"
 }
 
 export default function GoalsPage() {
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in">
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold" style={{ color: "var(--warm-brown)" }}>
-          Fazenda de Metas
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>
-          Cada meta é uma plantação. Cuide e veja crescer. 🌾
-        </p>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Fazenda de Metas"
+        subtitle="Cuide e veja crescer 🌾"
+        action={
+          <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
+            style={{ background: "var(--soft-orange)" }}>
+            <Plus size={15} /> Nova meta
+          </button>
+        }
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+      <div className="space-y-3">
         {goals.map(goal => {
           const pct = Math.round((goal.current / goal.target) * 100)
-
           return (
-            <Card key={goal.id} className="hover:scale-[1.01] transition-transform cursor-pointer">
-              <div className="flex gap-4">
-                {/* Planta SVG */}
-                <div className="flex flex-col items-center flex-shrink-0">
-                  <GrowingPlant progress={pct} color={goal.color} size={80} />
-                  <span className="text-[10px] text-center mt-1 font-medium"
-                    style={{ color: goal.color, maxWidth: 70 }}>
-                    {getPlantLabel(pct)}
+            <Card key={goal.id} className="flex gap-4 items-start">
+              {/* Planta */}
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                <GrowingPlant progress={pct} color={goal.color} size={72} />
+                <span className="text-[9px] text-center font-medium leading-tight"
+                  style={{ color: goal.color, maxWidth: 64 }}>
+                  {stageLabel(pct)}
+                </span>
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0 pt-1">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <h3 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                    {goal.label}
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
+                    style={{ background: goal.scopeColor + "20", color: goal.scopeColor }}>
+                    {goal.scope}
                   </span>
                 </div>
+                <p className="text-xs mb-2.5" style={{ color: "var(--muted-foreground)" }}>
+                  {goal.description}
+                </p>
 
-                {/* Conteúdo */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="font-semibold text-sm leading-tight" style={{ color: "var(--foreground)" }}>
-                      {goal.label}
-                    </p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0"
-                      style={{ background: goal.scopeColor + "22", color: goal.scopeColor }}>
-                      {goal.scope}
+                {/* Barra de progresso */}
+                <div className="mb-2.5">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      {goal.current.toLocaleString("pt-BR")} / {goal.target.toLocaleString("pt-BR")} {goal.unit}
                     </span>
+                    <span className="font-bold" style={{ color: goal.color }}>{pct}%</span>
                   </div>
-                  <p className="text-xs mb-3" style={{ color: "var(--muted-foreground)" }}>
-                    {goal.description}
-                  </p>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: goal.color }} />
+                  </div>
+                </div>
 
-                  {/* Progress */}
-                  <div className="mb-3">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span style={{ color: "var(--muted-foreground)" }}>
-                        {goal.current.toLocaleString("pt-BR")} / {goal.target.toLocaleString("pt-BR")} {goal.unit}
-                      </span>
-                      <span className="font-bold" style={{ color: goal.color }}>{pct}%</span>
-                    </div>
-                    <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-                      <div className="h-full rounded-full transition-all"
-                        style={{ width: `${pct}%`, background: goal.color }} />
-                    </div>
-                  </div>
-
-                  {/* Milestones */}
-                  <div className="flex flex-col gap-1">
-                    {goal.milestones.map((m, i) => {
-                      const done = m.includes("✅")
-                      return (
-                        <div key={i} className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                            style={{ background: done ? goal.color : "var(--card-border)" }} />
-                          <span className="text-xs" style={{ color: done ? "var(--muted-foreground)" : "var(--foreground)" }}>
-                            {m.replace(" ✅", "")}{done ? " ✅" : ""}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
+                {/* Milestones */}
+                <div className="space-y-1">
+                  {goal.milestones.map((m, i) => {
+                    const done = m.includes("✅")
+                    return (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{ background: done ? goal.color : "var(--card-border)" }} />
+                        <span className="text-xs" style={{ color: done ? "var(--muted-foreground)" : "var(--foreground)" }}>
+                          {m.replace(" ✅", "")}{done ? " ✅" : ""}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             </Card>
           )
         })}
 
-        {/* Nova meta */}
-        <Card className="flex flex-col items-center justify-center cursor-pointer hover:scale-[1.01] transition-transform border-dashed"
-          style={{ borderColor: "var(--card-border)", minHeight: 160 }}>
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-2"
-            style={{ background: "var(--muted)" }}>
-            <Plus size={22} style={{ color: "var(--muted-foreground)" }} />
-          </div>
-          <p className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>Nova meta</p>
-          <p className="text-xs mt-1" style={{ color: "var(--card-border)" }}>Plante uma nova semente</p>
-        </Card>
+        <button
+          className="w-full p-4 rounded-2xl flex items-center justify-center gap-2 transition-all hover:opacity-70"
+          style={{ border: "2px dashed var(--card-border)", color: "var(--muted-foreground)" }}>
+          <span className="text-xl">🌱</span>
+          <span className="text-sm">Plantar nova meta</span>
+        </button>
       </div>
     </div>
   )

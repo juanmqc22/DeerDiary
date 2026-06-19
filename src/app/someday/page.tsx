@@ -1,7 +1,8 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { Plus, Trash2, MoveRight } from "lucide-react"
+import { PageHeader } from "@/components/layout/page-header"
+import { Trash2, MoveRight, Plus } from "lucide-react"
 import { useState } from "react"
 
 const initial = [
@@ -27,48 +28,43 @@ export default function SomedayPage() {
   const remove = (id: number) => setItems(i => i.filter(x => x.id !== id))
 
   return (
-    <div className="max-w-2xl mx-auto animate-fade-in">
-      <div className="mb-5">
-        <h1 className="text-2xl md:text-3xl font-bold" style={{ color: "var(--warm-brown)" }}>
-          Algum dia / Talvez
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>
-          Boas ideias que não são prioridade agora. Revisitar na weekly review. 🌙
-        </p>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Algum dia / Talvez"
+        subtitle="Boas ideias que não são prioridade agora 🌙"
+      />
 
       {/* Input */}
-      <Card className="mb-5">
-        <input value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && add()}
-          placeholder="Uma ideia, um sonho, algo para o futuro..."
-          className="w-full text-sm outline-none bg-transparent"
-          style={{ color: "var(--foreground)" }} />
-        <div className="flex justify-end mt-2">
+      <Card className="p-3">
+        <div className="flex gap-2 items-center">
+          <input value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && add()}
+            placeholder="Uma ideia, um sonho, algo para o futuro..."
+            className="flex-1 text-sm outline-none bg-transparent"
+            style={{ color: "var(--foreground)" }} />
           <button onClick={add}
-            className="px-4 py-1.5 rounded-xl text-xs font-semibold text-white"
+            className="p-2 rounded-xl text-white flex-shrink-0"
             style={{ background: "var(--lavender)" }}>
-            Guardar ideia
+            <Plus size={16} />
           </button>
         </div>
       </Card>
 
       {/* Lista */}
-      <div className="flex flex-col gap-2">
+      <div className="space-y-2">
         {items.map(item => (
           <Card key={item.id} className="flex items-center gap-3 group">
-            <div className="w-1 h-10 rounded-full flex-shrink-0"
+            <div className="w-1 self-stretch rounded-full flex-shrink-0"
               style={{ background: item.areaColor }} />
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 py-0.5">
               <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px]" style={{ color: item.areaColor }}>{item.area}</span>
-                <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>· {item.date}</span>
-              </div>
+              <p className="text-xs mt-0.5">
+                <span style={{ color: item.areaColor }}>{item.area}</span>
+                <span style={{ color: "var(--muted-foreground)" }}> · {item.date}</span>
+              </p>
             </div>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
               <button className="p-1.5 rounded-lg hover:bg-[var(--muted)] transition-colors"
-                title="Mover para projeto"
                 style={{ color: "var(--sage)" }}>
                 <MoveRight size={14} />
               </button>
@@ -82,8 +78,8 @@ export default function SomedayPage() {
         ))}
       </div>
 
-      <p className="text-xs text-center mt-6" style={{ color: "var(--muted-foreground)" }}>
-        💡 Revise esta lista toda semana para ver se algo virou prioridade
+      <p className="text-xs text-center pb-2" style={{ color: "var(--muted-foreground)" }}>
+        💡 Revise esta lista toda semana na revisão de domingo
       </p>
     </div>
   )
