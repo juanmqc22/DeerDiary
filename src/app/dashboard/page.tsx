@@ -29,7 +29,6 @@ export default function Dashboard() {
 
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
   const done = actions.filter(a => a.done).length
-  const isSunday = new Date().getDay() === 0
 
   return (
     <div className="space-y-8">
@@ -112,19 +111,6 @@ export default function Dashboard() {
         </div>
       </Link>
 
-      {/* Banner domingo — discreto */}
-      {isSunday && (
-        <Link href="/review">
-          <Card className="flex items-center justify-between p-4 hover:opacity-90 transition-opacity"
-            style={{ background: "var(--sage)15", borderColor: "var(--sage)40" }}>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: "var(--warm-brown)" }}>Revisão de domingo 🕊️</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>Um momento só seu. Com calma.</p>
-            </div>
-            <ChevronRight size={16} style={{ color: "var(--muted-foreground)" }} />
-          </Card>
-        </Link>
-      )}
 
     </div>
   )

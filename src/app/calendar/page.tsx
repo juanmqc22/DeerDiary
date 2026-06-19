@@ -2,7 +2,8 @@
 
 import { Card } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 
 const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
@@ -16,7 +17,10 @@ const sampleEvents: Record<number, { title: string; color: string; who: string }
   28: [{ title: "Entrega de projeto", color: "var(--lavender)", who: "B" }],
 }
 
+const REVIEW_EVENT = { title: "Revisão de domingo 🕊️", color: "var(--sage)", who: "BJ", isReview: true }
+
 export default function CalendarPage() {
+  const router = useRouter()
   const now = new Date()
   const [month, setMonth] = useState(now.getMonth())
   const [year, setYear] = useState(now.getFullYear())
@@ -24,6 +28,18 @@ export default function CalendarPage() {
 
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+  // Build a map with Sunday review events auto-injected
+  const events = useMemo(() => {
+    const base: Record<number, { title: string; color: string; who: string; isReview?: boolean }[]> = { ...sampleEvents }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dow = new Date(year, month, d).getDay()
+      if (dow === 0) {
+        base[d] = [REVIEW_EVENT, ...(base[d] ?? [])]
+      }
+    }
+    return base
+  }, [month, year, daysInMonth])
 
   const prev = () => {
     if (month === 0) { setMonth(11); setYear(y => y - 1) }
@@ -38,7 +54,7 @@ export default function CalendarPage() {
   for (let i = 0; i < firstDay; i++) cells.push(null)
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
-  const selectedEvents = selected ? (sampleEvents[selected] ?? []) : []
+  const selectedEvents = selected ? (events[selected] ?? []) : []
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
@@ -82,7 +98,7 @@ export default function CalendarPage() {
             <div className="grid grid-cols-7 gap-1">
               {cells.map((day, i) => {
                 if (!day) return <div key={`e-${i}`} />
-                const hasEvents = !!sampleEvents[day]
+                const hasEvents = !!events[day]
                 const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear()
                 const isSelected = day === selected
 
@@ -100,7 +116,7 @@ export default function CalendarPage() {
                     {day}
                     {hasEvents && (
                       <div className="flex gap-0.5 mt-0.5">
-                        {sampleEvents[day].slice(0, 3).map((ev, idx) => (
+                        {events[day].slice(0, 3).map((ev, idx) => (
                           <div key={idx} className="w-1 h-1 rounded-full"
                             style={{ background: isSelected ? "white" : ev.color }} />
                         ))}
@@ -142,7 +158,9 @@ export default function CalendarPage() {
           ) : (
             <div className="flex flex-col gap-3">
               {selectedEvents.map((ev, i) => (
-                <Card key={i} className="border-l-4" style={{ borderLeftColor: ev.color }}>
+                <Card key={i} className={`border-l-4 ${ev.isReview ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
+                  style={{ borderLeftColor: ev.color }}
+                  onClick={ev.isReview ? () => router.push("/review") : undefined}>
                   <div className="flex items-start justify-between">
                     <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{ev.title}</p>
                     <div className="flex gap-1 ml-2">
@@ -156,6 +174,9 @@ export default function CalendarPage() {
                       )}
                     </div>
                   </div>
+                  {ev.isReview && (
+                    <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>Toque para iniciar a revisão →</p>
+                  )}
                 </Card>
               ))}
             </div>
