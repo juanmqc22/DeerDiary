@@ -57,21 +57,21 @@ export default function CalendarPage() {
   const selectedEvents = selected ? (events[selected] ?? []) : []
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="animate-fade-in">
+      <div className="mb-5 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: "var(--warm-brown)" }}>Calendário</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>Tudo no mesmo lugar, para os dois 📅</p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--warm-brown)" }}>Agenda</h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>Para os dois 📅</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
+        <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white"
           style={{ background: "var(--soft-orange)" }}>
-          <Plus size={16} /> Novo evento
+          <Plus size={15} /> Novo
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Calendário principal */}
-        <div className="col-span-2">
+        <div className="md:col-span-2">
           <Card>
             {/* Header do mês */}
             <div className="flex items-center justify-between mb-4">
@@ -129,7 +129,7 @@ export default function CalendarPage() {
           </Card>
 
           {/* Legenda */}
-          <div className="flex gap-4 mt-4 flex-wrap">
+          <div className="flex gap-3 mt-4 flex-wrap">
             {[
               { label: "Baby", color: "var(--dusty-rose)" },
               { label: "Juan", color: "var(--sky-blue)" },
@@ -145,7 +145,7 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Painel lateral do dia */}
+        {/* Painel do dia selecionado */}
         <div>
           <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
             {selected ? `Dia ${selected}` : "Selecione um dia"}

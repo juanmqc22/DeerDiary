@@ -23,6 +23,8 @@ const actions = [
   { id: 5, title: "Compras da semana", context: "@recados", area: "Casa", areaColor: "var(--dusty-rose)", done: false },
   { id: 6, title: "Pagar conta de luz", context: "@computador", area: "Casa", areaColor: "var(--dusty-rose)", done: false },
   { id: 7, title: "Agendar dermatologista", context: "@ligações", area: "Eu", areaColor: "var(--soft-orange)", done: true },
+  { id: 8, title: "Resposta do programa de pós-graduação", context: "@aguardando", area: "Pós-grad", areaColor: "var(--golden)", done: false },
+  { id: 9, title: "Aprovação do relatório — cliente A", context: "@aguardando", area: "Trabalho", areaColor: "var(--lavender)", done: false },
 ]
 
 const projects = [
@@ -52,7 +54,7 @@ const projects = [
   },
 ]
 
-const contexts = ["@computador", "@ligações", "@recados", "@casa"]
+const contexts = ["@computador", "@ligações", "@recados", "@casa", "@aguardando"]
 
 export default function TasksPage() {
   const [tab, setTab] = useState<Tab>("actions")

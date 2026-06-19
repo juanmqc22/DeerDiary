@@ -50,5 +50,10 @@ body {
   to { transform: scale(1); opacity: 1; }
 }
 
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
 .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
 .animate-grow { animation: grow 0.3s ease forwards; }
