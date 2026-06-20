@@ -180,17 +180,10 @@ export function Sidebar() {
 
 function DearIcon({ size = 34 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 72 72" fill="none">
-      <ellipse cx="36" cy="46" rx="14" ry="10" fill="#8b5e3c" opacity="0.85" />
-      <circle cx="36" cy="30" r="10" fill="#8b5e3c" opacity="0.85" />
-      <ellipse cx="27" cy="23" rx="4" ry="6" fill="#8b5e3c" opacity="0.7" transform="rotate(-15 27 23)" />
-      <ellipse cx="45" cy="23" rx="4" ry="6" fill="#8b5e3c" opacity="0.7" transform="rotate(15 45 23)" />
-      <path d="M29 18 Q26 12 22 8 M26 12 Q23 10 20 12" stroke="#8b5e3c" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
-      <path d="M43 18 Q46 12 50 8 M46 12 Q49 10 52 12" stroke="#8b5e3c" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
-      <circle cx="32" cy="29" r="2" fill="#3d2c1e" />
-      <circle cx="40" cy="29" r="2" fill="#3d2c1e" />
-      <circle cx="32.6" cy="28.4" r="0.7" fill="white" />
-      <circle cx="40.6" cy="28.4" r="0.7" fill="white" />
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <rect width="40" height="40" rx="12" fill="#8b5e3c" />
+      <path d="M20 29 C20 29 10 22 10 16 C10 12.5 13 10 16.5 10 C18.2 10 19.7 10.8 20 11.5 C20.3 10.8 21.8 10 23.5 10 C27 10 30 12.5 30 16 C30 22 20 29 20 29Z"
+        fill="white" opacity="0.92" />
     </svg>
   )
 }

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { CheckCircle2, Circle, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
+import { Onboarding, useOnboarding } from "@/components/onboarding"
 
 const focus = [
   { id: 1, title: "Enviar relatório mensal — cliente A", context: "@computador", done: false },
@@ -26,11 +27,14 @@ function greeting() {
 export default function Dashboard() {
   const [actions, setActions] = useState(focus)
   const toggle = (id: number) => setActions(a => a.map(x => x.id === id ? { ...x, done: !x.done } : x))
+  const { show: showOnboarding, done: doneOnboarding } = useOnboarding()
 
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
   const done = actions.filter(a => a.done).length
 
   return (
+    <>
+    {showOnboarding && <Onboarding onDone={doneOnboarding} />}
     <div className="space-y-8">
 
       {/* Saudação */}
@@ -113,5 +117,6 @@ export default function Dashboard() {
 
 
     </div>
+    </>
   )
 }

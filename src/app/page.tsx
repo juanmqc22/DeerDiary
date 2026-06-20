@@ -77,24 +77,10 @@ export default function Home() {
 
 function DearLogo() {
   return (
-    <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-      <ellipse cx="36" cy="46" rx="14" ry="10" fill="#8b5e3c" opacity="0.85" />
-      <circle cx="36" cy="30" r="10" fill="#8b5e3c" opacity="0.85" />
-      <ellipse cx="27" cy="23" rx="4" ry="6" fill="#8b5e3c" opacity="0.7" transform="rotate(-15 27 23)" />
-      <ellipse cx="45" cy="23" rx="4" ry="6" fill="#8b5e3c" opacity="0.7" transform="rotate(15 45 23)" />
-      <ellipse cx="27.5" cy="23" rx="2.5" ry="4" fill="#e8845a" opacity="0.5" transform="rotate(-15 27.5 23)" />
-      <ellipse cx="44.5" cy="23" rx="2.5" ry="4" fill="#e8845a" opacity="0.5" transform="rotate(15 44.5 23)" />
-      <path d="M29 18 Q26 12 22 8 M26 12 Q23 10 20 12" stroke="#8b5e3c" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
-      <path d="M43 18 Q46 12 50 8 M46 12 Q49 10 52 12" stroke="#8b5e3c" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
-      <circle cx="32" cy="29" r="2" fill="#3d2c1e" />
-      <circle cx="40" cy="29" r="2" fill="#3d2c1e" />
-      <circle cx="32.6" cy="28.4" r="0.7" fill="white" />
-      <circle cx="40.6" cy="28.4" r="0.7" fill="white" />
-      <ellipse cx="36" cy="34" rx="2.5" ry="1.5" fill="#3d2c1e" opacity="0.5" />
-      <rect x="25" y="54" width="4" height="10" rx="2" fill="#8b5e3c" opacity="0.7" />
-      <rect x="31" y="54" width="4" height="10" rx="2" fill="#8b5e3c" opacity="0.7" />
-      <rect x="37" y="54" width="4" height="10" rx="2" fill="#8b5e3c" opacity="0.7" />
-      <rect x="43" y="54" width="4" height="10" rx="2" fill="#8b5e3c" opacity="0.7" />
+    <svg width="80" height="80" viewBox="0 0 40 40" fill="none">
+      <rect width="40" height="40" rx="14" fill="#8b5e3c" />
+      <path d="M20 31 C20 31 9 23 9 16 C9 11.8 12.2 9 16 9 C18 9 19.7 9.9 20 10.8 C20.3 9.9 22 9 24 9 C27.8 9 31 11.8 31 16 C31 23 20 31 20 31Z"
+        fill="white" opacity="0.92" />
     </svg>
   )
 }
