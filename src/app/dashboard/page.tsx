@@ -5,6 +5,7 @@ import { CheckCircle2, Circle, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { Onboarding, useOnboarding } from "@/components/onboarding"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
 const focus = [
   { id: 1, title: "Enviar relatório mensal — cliente A", context: "@computador", done: false },
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [actions, setActions] = useState(focus)
   const toggle = (id: number) => setActions(a => a.map(x => x.id === id ? { ...x, done: !x.done } : x))
   const { show: showOnboarding, done: doneOnboarding } = useOnboarding()
+  const { identity } = useCurrentUser()
 
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
   const done = actions.filter(a => a.done).length
@@ -41,7 +43,7 @@ export default function Dashboard() {
       <div className="pt-2">
         <p className="text-xs capitalize tracking-wide" style={{ color: "var(--muted-foreground)" }}>{today}</p>
         <h1 className="text-3xl font-bold mt-1" style={{ color: "var(--warm-brown)" }}>
-          {greeting()}, Baby 🌸
+          {greeting()}, {identity ? `${identity.label} ${identity.emoji}` : "..."}
         </h1>
       </div>
 

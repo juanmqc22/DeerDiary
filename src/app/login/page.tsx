@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { GrowingPlant } from "@/components/ui/growing-plant"
 
@@ -15,6 +15,7 @@ function LoginForm() {
   const preselect = searchParams.get("user") as "baby" | "juan" | null
   const hasError = searchParams.get("error") === "auth"
 
+  const router = useRouter()
   const [who, setWho] = useState<"baby" | "juan">(preselect ?? "baby")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -31,6 +32,8 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithPassword({ email: user.email, password })
     if (error) {
       setError("Senha incorreta. Tente o link mágico abaixo.")
+    } else {
+      router.push("/dashboard")
     }
     setLoading(false)
   }

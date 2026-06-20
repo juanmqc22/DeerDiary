@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Calendar, Heart, Inbox, CheckSquare, User, TrendingUp, Sun, Menu, X } from "lucide-react"
 import { useState } from "react"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
 const primaryNav = [
   { href: "/dashboard", icon: Home, label: "Hoje" },
@@ -22,6 +23,7 @@ const secondaryNav = [
 export function Sidebar() {
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { identity } = useCurrentUser()
 
   const isActive = (href: string) =>
     pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
@@ -72,10 +74,10 @@ export function Sidebar() {
 
         <Link href="/profile" className="pb-2">
           <div className="flex -space-x-1.5">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-white"
-              style={{ background: "var(--dusty-rose)" }}>B</div>
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-white"
-              style={{ background: "var(--sky-blue)" }}>J</div>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2"
+              style={{ background: "var(--dusty-rose)", ringColor: identity?.who === "baby" ? "var(--warm-brown)" : "white", opacity: identity && identity.who !== "baby" ? 0.5 : 1 }}>B</div>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2"
+              style={{ background: "var(--sky-blue)", ringColor: identity?.who === "juan" ? "var(--warm-brown)" : "white", opacity: identity && identity.who !== "juan" ? 0.5 : 1 }}>J</div>
           </div>
         </Link>
       </aside>
@@ -99,10 +101,10 @@ export function Sidebar() {
         </Link>
         <Link href="/profile">
           <div className="flex -space-x-1.5">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-white"
-              style={{ background: "var(--dusty-rose)" }}>B</div>
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-white"
-              style={{ background: "var(--sky-blue)" }}>J</div>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2"
+              style={{ background: "var(--dusty-rose)", ringColor: identity?.who === "baby" ? "var(--warm-brown)" : "white", opacity: identity && identity.who !== "baby" ? 0.5 : 1 }}>B</div>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2"
+              style={{ background: "var(--sky-blue)", ringColor: identity?.who === "juan" ? "var(--warm-brown)" : "white", opacity: identity && identity.who !== "juan" ? 0.5 : 1 }}>J</div>
           </div>
         </Link>
       </header>
