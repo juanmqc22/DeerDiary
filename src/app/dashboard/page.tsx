@@ -2,21 +2,11 @@
 
 import { Card } from "@/components/ui/card"
 import { CheckCircle2, Circle, ChevronRight } from "lucide-react"
-import { useState } from "react"
 import Link from "next/link"
 import { Onboarding, useOnboarding } from "@/components/onboarding"
 import { useCurrentUser } from "@/hooks/use-current-user"
-
-const focus = [
-  { id: 1, title: "Enviar relatório mensal — cliente A", context: "@computador", done: false },
-  { id: 2, title: "Ligar para a coordenadora do programa", context: "@ligações", done: false },
-  { id: 3, title: "Compras da semana", context: "@recados", done: false },
-]
-
-const todayEvents = [
-  { time: "09:00", title: "Reunião de alinhamento", color: "var(--lavender)" },
-  { time: "14:00", title: "Culto — Sociedade de Socorro", color: "var(--sage)" },
-]
+import { useTasks } from "@/hooks/use-tasks"
+import { useInbox } from "@/hooks/use-inbox"
 
 function greeting() {
   const h = new Date().getHours()
@@ -26,13 +16,16 @@ function greeting() {
 }
 
 export default function Dashboard() {
-  const [actions, setActions] = useState(focus)
-  const toggle = (id: number) => setActions(a => a.map(x => x.id === id ? { ...x, done: !x.done } : x))
   const { show: showOnboarding, done: doneOnboarding } = useOnboarding()
   const { identity } = useCurrentUser()
+  const { tasks, loading: tasksLoading, toggle } = useTasks()
+  const { items: inboxItems, loading: inboxLoading } = useInbox()
 
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
-  const done = actions.filter(a => a.done).length
+
+  const focusTasks = tasks.filter(t => !t.project_id).slice(0, 5)
+  const doneCount = focusTasks.filter(t => t.done).length
+  const inboxCount = inboxItems.length
 
   return (
     <>
@@ -53,28 +46,43 @@ export default function Dashboard() {
           <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
             Foco de hoje
           </h2>
-          {done > 0 && (
+          {doneCount > 0 && (
             <span className="text-xs font-semibold" style={{ color: "var(--sage)" }}>
-              {done}/{actions.length} ✓
+              {doneCount}/{focusTasks.length} ✓
             </span>
           )}
         </div>
 
-        <Card className="divide-y overflow-hidden">
-          {actions.map(action => (
-            <button key={action.id} onClick={() => toggle(action.id)}
-              className="flex items-center gap-3 p-4 w-full text-left hover:bg-[var(--muted)] transition-colors">
-              {action.done
-                ? <CheckCircle2 size={18} style={{ color: "var(--sage)", flexShrink: 0 }} />
-                : <Circle size={18} style={{ color: "var(--card-border)", flexShrink: 0 }} />
-              }
-              <span className={`text-sm flex-1 leading-snug ${action.done ? "line-through" : ""}`}
-                style={{ color: action.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
-                {action.title}
-              </span>
-            </button>
-          ))}
-        </Card>
+        {tasksLoading ? (
+          <p className="text-sm text-center py-4" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
+        ) : focusTasks.length === 0 ? (
+          <Card className="p-6 text-center">
+            <p className="text-2xl mb-1">🌿</p>
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Nenhuma ação por aqui.</p>
+            <Link href="/tasks" className="text-xs mt-2 inline-block underline" style={{ color: "var(--soft-orange)" }}>
+              Adicionar ações
+            </Link>
+          </Card>
+        ) : (
+          <Card className="divide-y overflow-hidden">
+            {focusTasks.map(task => (
+              <button key={task.id} onClick={() => toggle(task.id, !task.done)}
+                className="flex items-center gap-3 p-4 w-full text-left hover:bg-[var(--muted)] transition-colors">
+                {task.done
+                  ? <CheckCircle2 size={18} style={{ color: "var(--sage)", flexShrink: 0 }} />
+                  : <Circle size={18} style={{ color: "var(--card-border)", flexShrink: 0 }} />
+                }
+                <div className="flex-1 min-w-0">
+                  <span className={`text-sm leading-snug block ${task.done ? "line-through" : ""}`}
+                    style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
+                    {task.title}
+                  </span>
+                  <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{task.context}</span>
+                </div>
+              </button>
+            ))}
+          </Card>
+        )}
 
         <Link href="/tasks"
           className="flex items-center justify-center gap-1 mt-2 py-2 text-xs"
@@ -83,40 +91,23 @@ export default function Dashboard() {
         </Link>
       </section>
 
-      {/* Compromissos — só aparece se tiver algo */}
-      {todayEvents.length > 0 && (
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3"
-            style={{ color: "var(--muted-foreground)" }}>
-            Compromissos
-          </h2>
-          <div className="space-y-2">
-            {todayEvents.map((ev, i) => (
-              <Card key={i} className="flex items-center gap-3 p-3.5">
-                <span className="text-xs font-mono font-bold w-11 flex-shrink-0" style={{ color: ev.color }}>
-                  {ev.time}
-                </span>
-                <div className="w-0.5 h-4 rounded-full flex-shrink-0" style={{ background: ev.color }} />
-                <span className="text-sm" style={{ color: "var(--foreground)" }}>{ev.title}</span>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Inbox — discreto, só o badge */}
+      {/* Inbox */}
       <Link href="/inbox">
         <div className="flex items-center justify-between py-3 px-1 border-b transition-opacity hover:opacity-70"
           style={{ borderColor: "var(--card-border)" }}>
           <span className="text-sm" style={{ color: "var(--muted-foreground)" }}>Inbox</span>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
-              style={{ background: "var(--soft-orange)" }}>4</span>
+            {!inboxLoading && inboxCount > 0 && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
+                style={{ background: "var(--soft-orange)" }}>{inboxCount}</span>
+            )}
+            {!inboxLoading && inboxCount === 0 && (
+              <span className="text-xs" style={{ color: "var(--sage)" }}>✓ limpo</span>
+            )}
             <ChevronRight size={14} style={{ color: "var(--card-border)" }} />
           </div>
         </div>
       </Link>
-
 
     </div>
     </>
