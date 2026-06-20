@@ -2,31 +2,21 @@
 
 import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/page-header"
-import { CheckCircle2, Circle, Plus, FolderOpen, Trash2 } from "lucide-react"
+import { CheckCircle2, Circle, Plus, FolderOpen, Trash2, X } from "lucide-react"
 import { useState } from "react"
+import { useTasks } from "@/hooks/use-tasks"
+import { useSomeday } from "@/hooks/use-someday"
 
 type Tab = "actions" | "projects" | "someday"
 
-const initialSomeday = [
-  { id: 1, text: "Fazer um curso de fotografia", date: "Jun 2026" },
-  { id: 2, text: "Aprender espanhol", date: "Mai 2026" },
-  { id: 3, text: "Criar podcast sobre mídias sociais", date: "Jun 2026" },
-  { id: 4, text: "Viagem ao Japão", date: "Mar 2026" },
-  { id: 5, text: "Montar home office definitivo", date: "Abr 2026" },
-]
+const AREAS = ["Trabalho", "Pós-grad", "Igreja", "Casa", "Eu"]
+const AREA_COLORS: Record<string, string> = {
+  Trabalho: "var(--lavender)", "Pós-grad": "var(--golden)",
+  Igreja: "var(--sage)", Casa: "var(--dusty-rose)", Eu: "var(--soft-orange)",
+}
+const contexts = ["@computador", "@ligações", "@recados", "@casa", "@aguardando"]
 
-const actions = [
-  { id: 1, title: "Enviar relatório mensal — cliente A", context: "@computador", area: "Trabalho", areaColor: "var(--lavender)", done: false },
-  { id: 2, title: "Revisar métricas do Instagram", context: "@computador", area: "Trabalho", areaColor: "var(--lavender)", done: false },
-  { id: 3, title: "Ligar para a coordenadora do programa", context: "@ligações", area: "Pós-grad", areaColor: "var(--golden)", done: false },
-  { id: 4, title: "Visitar irmã da ala", context: "@recados", area: "Igreja", areaColor: "var(--sage)", done: false },
-  { id: 5, title: "Compras da semana", context: "@recados", area: "Casa", areaColor: "var(--dusty-rose)", done: false },
-  { id: 6, title: "Pagar conta de luz", context: "@computador", area: "Casa", areaColor: "var(--dusty-rose)", done: false },
-  { id: 7, title: "Agendar dermatologista", context: "@ligações", area: "Eu", areaColor: "var(--soft-orange)", done: true },
-  { id: 8, title: "Resposta do programa de pós-graduação", context: "@aguardando", area: "Pós-grad", areaColor: "var(--golden)", done: false },
-  { id: 9, title: "Aprovação do relatório — cliente A", context: "@aguardando", area: "Trabalho", areaColor: "var(--lavender)", done: false },
-]
-
+// Mock projects (ainda sem backend)
 const projects = [
   {
     id: "posgrad", title: "Inscrição na pós-graduação", area: "Pós-grad", areaColor: "var(--golden)",
@@ -40,32 +30,87 @@ const projects = [
     nextAction: "Enviar relatório mensal — cliente A", nextContext: "@computador",
     total: 3, done: 2,
   },
-  {
-    id: "content", title: "Calendário de conteúdo — julho", area: "Trabalho", areaColor: "var(--lavender)",
-    outcome: "30 posts planejados e aprovados",
-    nextAction: "Criar estrutura do calendário no Notion", nextContext: "@computador",
-    total: 5, done: 0,
-  },
-  {
-    id: "home", title: "Organização do apartamento", area: "Casa", areaColor: "var(--dusty-rose)",
-    outcome: "Cada cômodo com sistema de manutenção",
-    nextAction: "Organizar armário do quarto", nextContext: "@casa",
-    total: 6, done: 3,
-  },
 ]
 
-const contexts = ["@computador", "@ligações", "@recados", "@casa", "@aguardando"]
+function AddTaskModal({ onClose, onAdd }: {
+  onClose: () => void
+  onAdd: (title: string, context: string, area: string) => void
+}) {
+  const [title, setTitle] = useState("")
+  const [context, setContext] = useState("@computador")
+  const [area, setArea] = useState("Trabalho")
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow"
+        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova ação</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
+            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
+        </div>
+
+        <div className="space-y-3">
+          <input value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="O que precisa ser feito?"
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
+            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), context, area), onClose())}
+            autoFocus
+          />
+
+          <div>
+            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Contexto</p>
+            <div className="flex flex-wrap gap-1.5">
+              {contexts.map(c => (
+                <button key={c} onClick={() => setContext(c)}
+                  className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    background: context === c ? "var(--foreground)" : "var(--muted)",
+                    color: context === c ? "white" : "var(--muted-foreground)",
+                  }}>{c}</button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Área</p>
+            <div className="flex flex-wrap gap-1.5">
+              {AREAS.map(a => (
+                <button key={a} onClick={() => setArea(a)}
+                  className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    background: area === a ? AREA_COLORS[a] : "var(--muted)",
+                    color: area === a ? "white" : "var(--muted-foreground)",
+                  }}>{a}</button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => { if (title.trim()) { onAdd(title.trim(), context, area); onClose() } }}
+            disabled={!title.trim()}
+            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+            style={{ background: "var(--soft-orange)" }}>
+            Adicionar ação
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function TasksPage() {
+  const { tasks, loading, add, toggle, remove } = useTasks()
+  const { items: someday, loading: somedayLoading, add: addSomeday, remove: removeSomeday } = useSomeday()
   const [tab, setTab] = useState<Tab>("actions")
-  const [items, setItems] = useState(actions)
-  const [someday, setSomeday] = useState(initialSomeday)
   const [context, setContext] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
+  const [addingTask, setAddingTask] = useState(false)
+  const [somedayInput, setSomedayInput] = useState("")
 
-  const toggle = (id: number) => setItems(a => a.map(x => x.id === id ? { ...x, done: !x.done } : x))
-
-  const filtered = items.filter(a => {
+  const filtered = tasks.filter(a => {
     if (!showDone && a.done) return false
     if (context && a.context !== context) return false
     return true
@@ -75,24 +120,27 @@ export default function TasksPage() {
     if (!acc[a.context]) acc[a.context] = []
     acc[a.context].push(a)
     return acc
-  }, {} as Record<string, typeof actions>)
+  }, {} as Record<string, typeof tasks>)
 
-  const pending = items.filter(a => !a.done).length
-  const doneCount = items.filter(a => a.done).length
+  const pending = tasks.filter(a => !a.done).length
+  const doneCount = tasks.filter(a => a.done).length
+
+  const formatDate = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })
 
   return (
     <div className="space-y-5">
       <PageHeader
         title="Tarefas"
         subtitle={
-          tab === "actions" ? `${pending} ações abertas` :
+          tab === "actions" ? (loading ? "..." : `${pending} ações abertas`) :
           tab === "projects" ? `${projects.length} projetos ativos` :
           `${someday.length} ideias guardadas`
         }
-        action={tab !== "someday" ? (
-          <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
+        action={tab === "actions" ? (
+          <button onClick={() => setAddingTask(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
             style={{ background: "var(--soft-orange)" }}>
-            <Plus size={15} /> {tab === "actions" ? "Nova ação" : "Novo projeto"}
+            <Plus size={15} /> Nova ação
           </button>
         ) : undefined}
       />
@@ -119,55 +167,64 @@ export default function TasksPage() {
       {/* Ações */}
       {tab === "actions" && (
         <div className="space-y-5">
-          {/* Filtros de contexto */}
           <div className="overflow-x-auto -mx-4 px-4">
             <div className="flex gap-2 pb-1 min-w-max">
               <button onClick={() => setContext(null)}
                 className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                style={{
-                  background: !context ? "var(--foreground)" : "var(--muted)",
-                  color: !context ? "white" : "var(--muted-foreground)",
-                }}>
+                style={{ background: !context ? "var(--foreground)" : "var(--muted)", color: !context ? "white" : "var(--muted-foreground)" }}>
                 Todos
               </button>
               {contexts.map(c => (
                 <button key={c} onClick={() => setContext(ctx => ctx === c ? null : c)}
                   className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                  style={{
-                    background: context === c ? "var(--foreground)" : "var(--muted)",
-                    color: context === c ? "white" : "var(--muted-foreground)",
-                  }}>
+                  style={{ background: context === c ? "var(--foreground)" : "var(--muted)", color: context === c ? "white" : "var(--muted-foreground)" }}>
                   {c}
                 </button>
               ))}
             </div>
           </div>
 
-          {Object.keys(grouped).length > 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
+            </div>
+          ) : Object.keys(grouped).length > 0 ? (
             <div className="space-y-4">
               {Object.entries(grouped).map(([ctx, acts]) => (
                 <section key={ctx}>
-                  <p className="text-xs font-semibold mb-2 flex items-center gap-2"
-                    style={{ color: "var(--muted-foreground)" }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: "var(--muted-foreground)" }}>
                     <span className="px-2 py-0.5 rounded-full" style={{ background: "var(--muted)" }}>{ctx}</span>
                   </p>
                   <Card className="divide-y overflow-hidden">
                     {acts.map(action => (
-                      <button key={action.id} onClick={() => toggle(action.id)}
-                        className="flex items-center gap-3 p-3.5 w-full text-left hover:bg-[var(--muted)] transition-colors">
-                        {action.done
-                          ? <CheckCircle2 size={17} style={{ color: "var(--sage)", flexShrink: 0 }} />
-                          : <Circle size={17} style={{ color: "var(--card-border)", flexShrink: 0 }} />
-                        }
-                        <span className={`text-sm flex-1 ${action.done ? "line-through" : ""}`}
-                          style={{ color: action.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
-                          {action.title}
-                        </span>
+                      <div key={action.id} className="flex items-center gap-3 p-3.5 hover:bg-[var(--muted)] transition-colors group">
+                        <button onClick={() => toggle(action.id, !action.done)} className="flex-shrink-0">
+                          {action.done
+                            ? <CheckCircle2 size={17} style={{ color: "var(--sage)" }} />
+                            : <Circle size={17} style={{ color: "var(--card-border)" }} />
+                          }
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-sm ${action.done ? "line-through" : ""}`}
+                            style={{ color: action.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
+                            {action.title}
+                          </span>
+                          {action.due_date && (
+                            <p className="text-[10px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+                              📅 {formatDate(action.due_date)}
+                            </p>
+                          )}
+                        </div>
                         <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 hidden sm:block"
-                          style={{ background: action.areaColor + "20", color: action.areaColor }}>
+                          style={{ background: action.area_color + "20", color: action.area_color }}>
                           {action.area}
                         </span>
-                      </button>
+                        <button onClick={() => remove(action.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-[var(--muted)] transition-all flex-shrink-0"
+                          style={{ color: "var(--dusty-rose)" }}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     ))}
                   </Card>
                 </section>
@@ -176,15 +233,19 @@ export default function TasksPage() {
           ) : (
             <div className="text-center py-12">
               <p className="text-3xl mb-2">✅</p>
-              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Tudo feito!</p>
+              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                {tasks.length === 0 ? "Nenhuma ação ainda. Crie sua primeira!" : "Tudo feito!"}
+              </p>
             </div>
           )}
 
-          <button onClick={() => setShowDone(s => !s)}
-            className="w-full py-2 text-xs rounded-xl hover:bg-[var(--muted)] transition-colors"
-            style={{ color: "var(--muted-foreground)" }}>
-            {showDone ? "Ocultar" : "Mostrar"} concluídas ({doneCount})
-          </button>
+          {doneCount > 0 && (
+            <button onClick={() => setShowDone(s => !s)}
+              className="w-full py-2 text-xs rounded-xl hover:bg-[var(--muted)] transition-colors"
+              style={{ color: "var(--muted-foreground)" }}>
+              {showDone ? "Ocultar" : "Mostrar"} concluídas ({doneCount})
+            </button>
+          )}
         </div>
       )}
 
@@ -230,25 +291,60 @@ export default function TasksPage() {
       {/* Algum dia */}
       {tab === "someday" && (
         <div className="space-y-3">
-          <div className="space-y-2">
-            {someday.map(item => (
-              <Card key={item.id} className="flex items-center gap-3 group">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{item.date}</p>
-                </div>
-                <button onClick={() => setSomeday(s => s.filter(x => x.id !== item.id))}
-                  className="p-1.5 rounded-lg hover:bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
-                  style={{ color: "var(--dusty-rose)" }}>
-                  <Trash2 size={13} />
-                </button>
-              </Card>
-            ))}
-          </div>
+          <Card className="p-3">
+            <div className="flex gap-2">
+              <input value={somedayInput} onChange={e => setSomedayInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && somedayInput.trim()) { addSomeday(somedayInput.trim()); setSomedayInput("") } }}
+                placeholder="Uma ideia, um sonho, algo para o futuro..."
+                className="flex-1 text-sm outline-none bg-transparent"
+                style={{ color: "var(--foreground)" }} />
+              <button onClick={() => { if (somedayInput.trim()) { addSomeday(somedayInput.trim()); setSomedayInput("") } }}
+                className="p-2 rounded-xl text-white flex-shrink-0"
+                style={{ background: "var(--lavender)" }}>
+                <Plus size={15} />
+              </button>
+            </div>
+          </Card>
+
+          {somedayLoading ? (
+            <div className="text-center py-4">
+              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {someday.map(item => (
+                <Card key={item.id} className="flex items-center gap-3 group">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+                      {new Date(item.created_at).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                  <button onClick={() => removeSomeday(item.id)}
+                    className="p-1.5 rounded-lg hover:bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+                    style={{ color: "var(--dusty-rose)" }}>
+                    <Trash2 size={13} />
+                  </button>
+                </Card>
+              ))}
+              {someday.length === 0 && (
+                <p className="text-sm text-center py-8" style={{ color: "var(--muted-foreground)" }}>
+                  Nenhuma ideia ainda. Adicione algo acima!
+                </p>
+              )}
+            </div>
+          )}
           <p className="text-xs text-center pt-2" style={{ color: "var(--muted-foreground)" }}>
             💡 Revise esses itens na revisão de domingo
           </p>
         </div>
+      )}
+
+      {addingTask && (
+        <AddTaskModal
+          onClose={() => setAddingTask(false)}
+          onAdd={(title, context, area) => add({ title, context, area, area_color: AREA_COLORS[area] })}
+        />
       )}
     </div>
   )

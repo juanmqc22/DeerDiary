@@ -4,22 +4,16 @@ import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/page-header"
 import { Trash2, MoveRight, ArrowRight, Calendar } from "lucide-react"
 import { useState } from "react"
-
-type InboxItem = { id: number; text: string; date: string }
-
-const initialInbox: InboxItem[] = [
-  { id: 1, text: "Pesquisar sobre mestrado em comunicação", date: "hoje" },
-  { id: 2, text: "Ligar pra mãe no fim de semana", date: "ontem" },
-  { id: 3, text: "Criar template de relatório para clientes", date: "ontem" },
-  { id: 4, text: "Comprar presente de aniversário da Lia", date: "há 2 dias" },
-]
+import { useInbox } from "@/hooks/use-inbox"
+import { useSomeday } from "@/hooks/use-someday"
+import { createClient } from "@/lib/supabase/client"
 
 const areas = ["Trabalho", "Pós-grad", "Igreja", "Casa", "Eu"]
 const contexts = ["@computador", "@ligações", "@recados", "@casa", "@leitura"]
 
 type Outcome = "action" | "project" | "someday" | "reference" | "trash" | null
 
-function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: (outcome: Outcome) => void }) {
+function ClarifyModal({ text, onClose }: { text: string; onClose: (outcome: Outcome) => void }) {
   const [step, setStep] = useState<"actionable" | "type" | "details">("actionable")
   const [type, setType] = useState<string | null>(null)
   const [area, setArea] = useState("")
@@ -32,7 +26,7 @@ function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: (outcome: O
         style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
 
         <div className="mb-4 p-3 rounded-xl" style={{ background: "var(--muted)" }}>
-          <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{item.text}</p>
+          <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{text}</p>
         </div>
 
         {step === "actionable" && (
@@ -103,9 +97,7 @@ function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: (outcome: O
                       style={{
                         background: area === a ? "var(--warm-brown)" : "var(--muted)",
                         color: area === a ? "white" : "var(--muted-foreground)",
-                      }}>
-                      {a}
-                    </button>
+                      }}>{a}</button>
                   ))}
                 </div>
               </div>
@@ -119,9 +111,7 @@ function ClarifyModal({ item, onClose }: { item: InboxItem; onClose: (outcome: O
                         style={{
                           background: context === c ? "var(--soft-orange)" : "var(--muted)",
                           color: context === c ? "white" : "var(--muted-foreground)",
-                        }}>
-                        {c}
-                      </button>
+                        }}>{c}</button>
                     ))}
                   </div>
                 </div>
@@ -161,25 +151,54 @@ const outcomeMessages: Record<string, string> = {
 }
 
 export default function InboxPage() {
-  const [inbox, setInbox] = useState(initialInbox)
+  const { items, loading, add, remove } = useInbox()
+  const { add: addSomeday } = useSomeday()
   const [input, setInput] = useState("")
-  const [clarifying, setClarifying] = useState<InboxItem | null>(null)
+  const [clarifyingId, setClarifyingId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const supabase = createClient()
 
-  const addInbox = () => {
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  const handleAdd = async () => {
     if (!input.trim()) return
-    setInbox(i => [{ id: Date.now(), text: input.trim(), date: "agora" }, ...i])
+    await add(input.trim())
     setInput("")
   }
 
-  const handleProcessed = (outcome: Outcome) => {
-    if (!clarifying) return
-    if (outcome !== null) {
-      setInbox(i => i.filter(x => x.id !== clarifying.id))
-      setToast(outcomeMessages[outcome])
-      setTimeout(() => setToast(null), 3000)
+  const handleProcessed = async (outcome: Outcome) => {
+    const item = items.find(i => i.id === clarifyingId)
+    if (!item || outcome === null) { setClarifyingId(null); return }
+
+    if (outcome === "someday") {
+      await addSomeday(item.text)
+    } else if (outcome === "action") {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from("tasks").insert({
+          title: item.text, user_id: user.id,
+          context: "@computador", area: "Trabalho", area_color: "var(--lavender)",
+        })
+      }
     }
-    setClarifying(null)
+
+    await remove(item.id)
+    showToast(outcomeMessages[outcome])
+    setClarifyingId(null)
+  }
+
+  const clarifyingItem = items.find(i => i.id === clarifyingId)
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso)
+    const now = new Date()
+    const diff = Math.floor((now.getTime() - d.getTime()) / 86400000)
+    if (diff === 0) return "hoje"
+    if (diff === 1) return "ontem"
+    return `há ${diff} dias`
   }
 
   return (
@@ -188,13 +207,13 @@ export default function InboxPage() {
 
       <Card className="p-3">
         <textarea value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), addInbox())}
+          onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleAdd())}
           placeholder="O que está na sua cabeça agora?"
           className="w-full text-sm resize-none outline-none bg-transparent"
           style={{ color: "var(--foreground)", minHeight: 60 }} />
         <div className="flex justify-between items-center mt-2">
           <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>Enter para salvar</span>
-          <button onClick={addInbox}
+          <button onClick={handleAdd}
             className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white"
             style={{ background: "var(--soft-orange)" }}>
             Capturar
@@ -202,21 +221,27 @@ export default function InboxPage() {
         </div>
       </Card>
 
-      {inbox.length > 0 ? (
+      {loading ? (
+        <div className="text-center py-8">
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
+        </div>
+      ) : items.length > 0 ? (
         <div className="space-y-2">
-          {inbox.map(item => (
+          {items.map(item => (
             <Card key={item.id} className="flex items-center gap-3 group">
               <div className="flex-1 min-w-0">
                 <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{item.date}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+                  {formatDate(item.created_at)}
+                </p>
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                <button onClick={() => setClarifying(item)}
+                <button onClick={() => setClarifyingId(item.id)}
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white"
                   style={{ background: "var(--soft-orange)" }}>
                   <MoveRight size={12} /> Processar
                 </button>
-                <button onClick={() => setInbox(i => i.filter(x => x.id !== item.id))}
+                <button onClick={() => remove(item.id)}
                   className="p-1.5 rounded-lg hover:bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all"
                   style={{ color: "var(--dusty-rose)" }}>
                   <Trash2 size={13} />
@@ -233,14 +258,13 @@ export default function InboxPage() {
         </div>
       )}
 
-      {clarifying && (
-        <ClarifyModal item={clarifying} onClose={handleProcessed} />
+      {clarifyingId && clarifyingItem && (
+        <ClarifyModal text={clarifyingItem.text} onClose={handleProcessed} />
       )}
 
-      {/* Toast de confirmação */}
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-medium text-white shadow-lg"
-          style={{ background: "var(--warm-brown)" }}>
+          style={{ background: "var(--warm-brown)", whiteSpace: "nowrap" }}>
           {toast}
         </div>
       )}
