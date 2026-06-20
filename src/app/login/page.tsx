@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/client"
 import { GrowingPlant } from "@/components/ui/growing-plant"
 
 const USERS = {
-  baby: { email: "baby@deardiary.app", label: "Baby", emoji: "🌸", color: "var(--dusty-rose)", bg: "linear-gradient(135deg, #c97d7d, #e8845a)" },
-  juan: { email: "juan@deardiary.app", label: "Juan", emoji: "🌊", color: "var(--sky-blue)", bg: "linear-gradient(135deg, #7aa3c9, #9b8bc4)" },
+  baby: { email: "biamarmelo27@gmail.com", label: "Baby", emoji: "🌸", color: "var(--dusty-rose)", bg: "linear-gradient(135deg, #c97d7d, #e8845a)" },
+  juan: { email: "juanmqc01@gmail.com", label: "Juan", emoji: "🌊", color: "var(--sky-blue)", bg: "linear-gradient(135deg, #7aa3c9, #9b8bc4)" },
 }
 
 function LoginForm() {
