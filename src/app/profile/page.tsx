@@ -4,10 +4,19 @@ import { Card } from "@/components/ui/card"
 import { GrowingPlant } from "@/components/ui/growing-plant"
 import { Bell, Moon, Globe, ChevronRight, LogOut, Heart, Star } from "lucide-react"
 import { useState } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function ProfilePage() {
+  const router = useRouter()
   const [notifications, setNotifications] = useState(true)
   const [sundayReminder, setSundayReminder] = useState(true)
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/")
+  }
 
   return (
     <div className="max-w-xl mx-auto animate-fade-in">
@@ -161,7 +170,7 @@ export default function ProfilePage() {
       </Card>
 
       {/* Sair */}
-      <button className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 transition-all hover:opacity-80"
+      <button onClick={handleLogout} className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 transition-all hover:opacity-80"
         style={{ color: "var(--dusty-rose)", background: "var(--dusty-rose)" + "15" }}>
         <LogOut size={16} />
         Sair da conta

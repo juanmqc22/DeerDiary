@@ -55,12 +55,12 @@ export default function Home() {
 
         {/* Botões */}
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <Link href="/dashboard"
+          <Link href="/login?user=baby"
             className="w-full py-4 px-6 rounded-2xl text-center font-bold text-white shadow-lg transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
             style={{ background: "linear-gradient(135deg, #c97d7d, #e8845a)" }}>
             Entrar como Baby 🌸
           </Link>
-          <Link href="/dashboard"
+          <Link href="/login?user=juan"
             className="w-full py-4 px-6 rounded-2xl text-center font-bold text-white shadow-lg transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
             style={{ background: "linear-gradient(135deg, #7aa3c9, #9b8bc4)" }}>
             Entrar como Juan 🌊
