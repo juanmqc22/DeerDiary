@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, Heart, Inbox, CheckSquare, User, TrendingUp, Sun, Menu, X } from "lucide-react"
+import { Home, Calendar, Heart, Inbox, CheckSquare, User, Menu, X } from "lucide-react"
 import { useState } from "react"
 import { useCurrentUser } from "@/hooks/use-current-user"
 
@@ -15,8 +15,6 @@ const primaryNav = [
 ]
 
 const secondaryNav = [
-  { href: "/goals", icon: TrendingUp, label: "Metas" },
-  { href: "/review", icon: Sun, label: "Revisão de domingo" },
   { href: "/profile", icon: User, label: "Perfil" },
 ]
 
@@ -30,15 +28,26 @@ export function Sidebar() {
 
   const close = () => setDrawerOpen(false)
 
+  const AvatarRow = () => (
+    <div className="flex -space-x-1.5">
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "baby" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
+        style={{ background: "var(--dusty-rose)", opacity: identity && identity.who !== "baby" ? 0.45 : 1 }}>B</div>
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "juan" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
+        style={{ background: "var(--sky-blue)", opacity: identity && identity.who !== "juan" ? 0.45 : 1 }}>J</div>
+    </div>
+  )
+
   return (
     <>
-      {/* ── Desktop sidebar ── */}
+      {/* ── Desktop sidebar (md: icon-only 68px, lg: expanded 200px) ── */}
       <aside
-        className="hidden md:flex fixed left-0 top-0 h-full w-[68px] flex-col items-center py-4 z-50"
+        className="hidden md:flex fixed left-0 top-0 h-full flex-col items-center py-4 z-50 w-[68px] lg:w-[200px] lg:items-start"
         style={{ background: "var(--card)", borderRight: "1px solid var(--card-border)" }}
       >
-        <Link href="/" className="mb-5">
-          <DearIcon />
+        {/* Logo */}
+        <Link href="/" className="mb-5 md:flex md:items-center md:gap-2.5 md:px-2 lg:px-4">
+          <DearIcon size={34} />
+          <span className="hidden lg:block text-base font-bold" style={{ color: "var(--warm-brown)" }}>DearDiary</span>
         </Link>
 
         <nav className="flex flex-col gap-0.5 w-full px-2 flex-1">
@@ -46,38 +55,41 @@ export function Sidebar() {
             const active = isActive(href)
             return (
               <Link key={href} href={href}
-                className="flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all text-center"
+                className="flex items-center gap-3 py-2.5 rounded-xl transition-all md:justify-center lg:justify-start lg:px-3"
                 style={active
                   ? { background: "var(--soft-orange)", color: "white" }
                   : { color: "var(--muted-foreground)" }
                 }>
-                <Icon size={18} strokeWidth={active ? 2.5 : 1.8} />
-                <span className="text-[9px] font-semibold">{label}</span>
+                <Icon size={18} strokeWidth={active ? 2.5 : 1.8} className="flex-shrink-0" />
+                <span className="hidden lg:block text-sm font-semibold">{label}</span>
+                <span className="block lg:hidden text-[9px] font-semibold sr-only">{label}</span>
               </Link>
             )
           })}
 
-          <div className="my-2 mx-3 h-px" style={{ background: "var(--card-border)" }} />
+          <div className="my-2 mx-1 h-px" style={{ background: "var(--card-border)" }} />
 
           {secondaryNav.map(({ href, icon: Icon, label }) => {
             const active = isActive(href)
             return (
               <Link key={href} href={href}
-                className="flex flex-col items-center gap-1 py-2 rounded-xl transition-all text-center hover:bg-[var(--muted)]"
+                className="flex items-center gap-3 py-2 rounded-xl transition-all hover:bg-[var(--muted)] md:justify-center lg:justify-start lg:px-3"
                 style={{ color: active ? "var(--warm-brown)" : "var(--muted-foreground)" }}>
-                <Icon size={15} strokeWidth={1.8} />
-                <span className="text-[8px] font-medium">{label.split(" ")[0]}</span>
+                <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                <span className="hidden lg:block text-sm font-medium">{label}</span>
               </Link>
             )
           })}
         </nav>
 
-        <Link href="/profile" className="pb-2">
-          <div className="flex -space-x-1.5">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "baby" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
-              style={{ background: "var(--dusty-rose)", opacity: identity && identity.who !== "baby" ? 0.45 : 1 }}>B</div>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "juan" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
-              style={{ background: "var(--sky-blue)", opacity: identity && identity.who !== "juan" ? 0.45 : 1 }}>J</div>
+        <Link href="/profile" className="pb-2 lg:px-4 lg:w-full">
+          <div className="flex items-center gap-2.5">
+            <AvatarRow />
+            {identity && (
+              <span className="hidden lg:block text-xs font-semibold truncate" style={{ color: "var(--warm-brown)" }}>
+                {identity.label} {identity.emoji}
+              </span>
+            )}
           </div>
         </Link>
       </aside>
@@ -100,12 +112,7 @@ export function Sidebar() {
           <DearIcon size={28} />
         </Link>
         <Link href="/profile">
-          <div className="flex -space-x-1.5">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "baby" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
-              style={{ background: "var(--dusty-rose)", opacity: identity && identity.who !== "baby" ? 0.45 : 1 }}>B</div>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "juan" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
-              style={{ background: "var(--sky-blue)", opacity: identity && identity.who !== "juan" ? 0.45 : 1 }}>J</div>
-          </div>
+          <AvatarRow />
         </Link>
       </header>
 
@@ -168,11 +175,14 @@ export function Sidebar() {
               })}
             </nav>
 
-            <div className="px-5 pt-4 border-t" style={{ borderColor: "var(--card-border)" }}>
-              <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                Revisão de domingo no calendário 🕊️
-              </p>
-            </div>
+            {identity && (
+              <div className="px-5 pt-4 border-t flex items-center gap-2.5" style={{ borderColor: "var(--card-border)" }}>
+                <AvatarRow />
+                <span className="text-sm font-semibold" style={{ color: "var(--warm-brown)" }}>
+                  {identity.label} {identity.emoji}
+                </span>
+              </div>
+            )}
           </aside>
         </>
       )}
