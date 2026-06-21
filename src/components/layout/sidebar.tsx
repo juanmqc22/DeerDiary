@@ -74,10 +74,10 @@ export function Sidebar() {
 
         <Link href="/profile" className="pb-2">
           <div className="flex -space-x-1.5">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2"
-              style={{ background: "var(--dusty-rose)", ringColor: identity?.who === "baby" ? "var(--warm-brown)" : "white", opacity: identity && identity.who !== "baby" ? 0.5 : 1 }}>B</div>
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2"
-              style={{ background: "var(--sky-blue)", ringColor: identity?.who === "juan" ? "var(--warm-brown)" : "white", opacity: identity && identity.who !== "juan" ? 0.5 : 1 }}>J</div>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "baby" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
+              style={{ background: "var(--dusty-rose)", opacity: identity && identity.who !== "baby" ? 0.45 : 1 }}>B</div>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "juan" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
+              style={{ background: "var(--sky-blue)", opacity: identity && identity.who !== "juan" ? 0.45 : 1 }}>J</div>
           </div>
         </Link>
       </aside>
@@ -101,10 +101,10 @@ export function Sidebar() {
         </Link>
         <Link href="/profile">
           <div className="flex -space-x-1.5">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2"
-              style={{ background: "var(--dusty-rose)", ringColor: identity?.who === "baby" ? "var(--warm-brown)" : "white", opacity: identity && identity.who !== "baby" ? 0.5 : 1 }}>B</div>
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2"
-              style={{ background: "var(--sky-blue)", ringColor: identity?.who === "juan" ? "var(--warm-brown)" : "white", opacity: identity && identity.who !== "juan" ? 0.5 : 1 }}>J</div>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "baby" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
+              style={{ background: "var(--dusty-rose)", opacity: identity && identity.who !== "baby" ? 0.45 : 1 }}>B</div>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ${identity?.who === "juan" ? "ring-[var(--warm-brown)]" : "ring-white"}`}
+              style={{ background: "var(--sky-blue)", opacity: identity && identity.who !== "juan" ? 0.45 : 1 }}>J</div>
           </div>
         </Link>
       </header>
