@@ -114,7 +114,8 @@ export default function CalendarPage() {
 
   // Build day map with Sunday reviews injected
   const eventsByDay = useMemo(() => {
-    const map: Record<number, typeof REVIEW_EVENT[]> = {}
+    type AnyEvent = { id: string; title: string; color: string; who: string; event_date: string; event_time: string | null; created_at: string; isReview: boolean }
+    const map: Record<number, AnyEvent[]> = {}
     for (let d = 1; d <= daysInMonth; d++) {
       const dow = new Date(year, month, d).getDay()
       if (dow === 0) map[d] = [{ ...REVIEW_EVENT, event_date: `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}` }]
