@@ -25,26 +25,8 @@ type TasksTab = "acoes" | "projetos"
 
 // ── Shared modals ──────────────────────────────────────────────────────────
 
-function WhoSelector({ who, onChange }: { who: string; onChange: (w: string) => void }) {
-  return (
-    <div>
-      <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Responsável</p>
-      <div className="flex gap-2">
-        {["B", "J", "BJ"].map(w => (
-          <button key={w} onClick={() => onChange(w)}
-            className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
-            style={{ background: who === w ? "var(--warm-brown)" : "var(--muted)", color: who === w ? "white" : "var(--muted-foreground)" }}>
-            {w === "BJ" ? "Casal" : w}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function AddSharedTaskModal({ onClose, onAdd }: { onClose: () => void; onAdd: (title: string, who: string) => void }) {
+function AddSharedTaskModal({ onClose, onAdd }: { onClose: () => void; onAdd: (title: string) => void }) {
   const [title, setTitle] = useState("")
-  const [who, setWho] = useState("BJ")
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
@@ -60,9 +42,8 @@ function AddSharedTaskModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t
             placeholder="O que precisa ser feito?" autoFocus
             className="w-full text-sm p-3 rounded-xl outline-none"
             style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
-            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), who), onClose())} />
-          <WhoSelector who={who} onChange={setWho} />
-          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), who); onClose() } }}
+            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim()), onClose())} />
+          <button onClick={() => { if (title.trim()) { onAdd(title.trim()); onClose() } }}
             disabled={!title.trim()}
             className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
             style={{ background: "var(--soft-orange)" }}>
@@ -76,10 +57,9 @@ function AddSharedTaskModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t
 
 function AddSharedProjectModal({ onClose, onAdd }: {
   onClose: () => void
-  onAdd: (title: string, who: string, outcome: string) => void
+  onAdd: (title: string, outcome: string) => void
 }) {
   const [title, setTitle] = useState("")
-  const [who, setWho] = useState("BJ")
   const [outcome, setOutcome] = useState("")
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -100,8 +80,7 @@ function AddSharedProjectModal({ onClose, onAdd }: {
             placeholder="Resultado desejado (opcional)"
             className="w-full text-sm p-3 rounded-xl outline-none"
             style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
-          <WhoSelector who={who} onChange={setWho} />
-          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), who, outcome.trim()); onClose() } }}
+          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), outcome.trim()); onClose() } }}
             disabled={!title.trim()}
             className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
             style={{ background: "var(--golden)" }}>
@@ -116,10 +95,9 @@ function AddSharedProjectModal({ onClose, onAdd }: {
 function AddTaskToProjectModal({ project, onClose, onAdd }: {
   project: SharedProject
   onClose: () => void
-  onAdd: (title: string, who: string) => void
+  onAdd: (title: string) => void
 }) {
   const [title, setTitle] = useState("")
-  const [who, setWho] = useState(project.who)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
@@ -136,9 +114,8 @@ function AddTaskToProjectModal({ project, onClose, onAdd }: {
             placeholder="O que precisa ser feito?" autoFocus
             className="w-full text-sm p-3 rounded-xl outline-none"
             style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
-            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), who), onClose())} />
-          <WhoSelector who={who} onChange={setWho} />
-          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), who); onClose() } }}
+            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim()), onClose())} />
+          <button onClick={() => { if (title.trim()) { onAdd(title.trim()); onClose() } }}
             disabled={!title.trim()}
             className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
             style={{ background: "var(--golden)" }}>
@@ -150,30 +127,12 @@ function AddTaskToProjectModal({ project, onClose, onAdd }: {
   )
 }
 
-// ── Who avatar chips ────────────────────────────────────────────────────────
-
-function WhoAvatars({ who }: { who: string }) {
-  return (
-    <div className="flex gap-0.5">
-      {who.includes("B") && (
-        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-          style={{ background: "var(--dusty-rose)" }}>B</div>
-      )}
-      {who.includes("J") && (
-        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-          style={{ background: "var(--sky-blue)" }}>J</div>
-      )}
-    </div>
-  )
-}
-
 // ── Shared Project Card ─────────────────────────────────────────────────────
 
 function SharedTaskEditModal({ task, onClose, onSave }: {
-  task: SharedTask; onClose: () => void; onSave: (title: string, who: string) => void
+  task: SharedTask; onClose: () => void; onSave: (title: string) => void
 }) {
   const [title, setTitle] = useState(task.title)
-  const [who, setWho] = useState(task.who)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
@@ -187,9 +146,9 @@ function SharedTaskEditModal({ task, onClose, onSave }: {
         <div className="space-y-3">
           <input value={title} onChange={e => setTitle(e.target.value)} autoFocus
             className="w-full text-sm p-3 rounded-xl outline-none"
-            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
-          <WhoSelector who={who} onChange={setWho} />
-          <button onClick={() => { if (title.trim()) { onSave(title.trim(), who); onClose() } }}
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
+            onKeyDown={e => e.key === "Enter" && title.trim() && (onSave(title.trim()), onClose())} />
+          <button onClick={() => { if (title.trim()) { onSave(title.trim()); onClose() } }}
             disabled={!title.trim()}
             className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
             style={{ background: "var(--soft-orange)" }}>
@@ -202,10 +161,9 @@ function SharedTaskEditModal({ task, onClose, onSave }: {
 }
 
 function SharedProjectEditModal({ project, onClose, onSave }: {
-  project: SharedProject; onClose: () => void; onSave: (title: string, who: string, outcome: string) => void
+  project: SharedProject; onClose: () => void; onSave: (title: string, outcome: string) => void
 }) {
   const [title, setTitle] = useState(project.title)
-  const [who, setWho] = useState(project.who)
   const [outcome, setOutcome] = useState(project.outcome)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -225,8 +183,7 @@ function SharedProjectEditModal({ project, onClose, onSave }: {
             placeholder="Resultado desejado (opcional)"
             className="w-full text-sm p-3 rounded-xl outline-none"
             style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
-          <WhoSelector who={who} onChange={setWho} />
-          <button onClick={() => { if (title.trim()) { onSave(title.trim(), who, outcome.trim()); onClose() } }}
+          <button onClick={() => { if (title.trim()) { onSave(title.trim(), outcome.trim()); onClose() } }}
             disabled={!title.trim()}
             className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
             style={{ background: "var(--golden)" }}>
@@ -241,11 +198,11 @@ function SharedProjectEditModal({ project, onClose, onSave }: {
 function SharedProjectCard({ p, tasks, onAddTask, onToggle, onUpdateTask, onRemoveTask, onUpdate, onRemove }: {
   p: SharedProject
   tasks: SharedTask[]
-  onAddTask: (title: string, who: string) => void
+  onAddTask: (title: string) => void
   onToggle: (id: string, done: boolean) => void
-  onUpdateTask: (id: string, title: string, who: string) => void
+  onUpdateTask: (id: string, title: string) => void
   onRemoveTask: (id: string) => void
-  onUpdate: (title: string, who: string, outcome: string) => void
+  onUpdate: (title: string, outcome: string) => void
   onRemove: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -263,11 +220,8 @@ function SharedProjectCard({ p, tasks, onAddTask, onToggle, onUpdateTask, onRemo
     <>
       <Card>
         <div className="flex items-start justify-between gap-2 mb-1">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold mt-0.5" style={{ color: "var(--foreground)" }}>{p.title}</h3>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <WhoAvatars who={p.who} />
+          <h3 className="text-sm font-semibold flex-1 min-w-0" style={{ color: "var(--foreground)" }}>{p.title}</h3>
+          <div className="flex items-center gap-1 flex-shrink-0">
             <span className="text-sm font-bold" style={{ color: projectColor }}>{pct}%</span>
             <button onClick={() => setEditingProject(true)}
               className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
@@ -294,8 +248,7 @@ function SharedProjectCard({ p, tasks, onAddTask, onToggle, onUpdateTask, onRemo
           nextAction ? (
             <div className="flex items-center gap-2 p-2.5 rounded-xl mb-3" style={{ background: "var(--muted)" }}>
               <Circle size={12} style={{ color: projectColor, flexShrink: 0 }} />
-              <p className="text-xs flex-1 truncate" style={{ color: "var(--foreground)" }}>{nextAction.title}</p>
-              <WhoAvatars who={nextAction.who} />
+              <p className="text-xs flex-1" style={{ color: "var(--foreground)" }}>{nextAction.title}</p>
             </div>
           ) : projectTasks.length > 0 ? (
             <p className="text-xs text-center py-1 mb-3" style={{ color: "var(--sage)" }}>✓ Todas as ações concluídas!</p>
@@ -310,26 +263,24 @@ function SharedProjectCard({ p, tasks, onAddTask, onToggle, onUpdateTask, onRemo
               </p>
             )}
             {projectTasks.map(task => (
-              <div key={task.id}
-                className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors">
+              <div key={task.id} className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors">
                 <button onClick={() => onToggle(task.id, !task.done)} className="flex-shrink-0">
                   {task.done
                     ? <CheckCircle2 size={16} style={{ color: "var(--sage)" }} />
                     : <Circle size={16} style={{ color: "var(--card-border)" }} />
                   }
                 </button>
-                <span className={`text-sm flex-1 min-w-0 truncate ${task.done ? "line-through" : ""}`}
+                <span className={`text-sm flex-1 min-w-0 ${task.done ? "line-through" : ""}`}
                   style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
                   {task.title}
                 </span>
-                <WhoAvatars who={task.who} />
                 <button onClick={() => setEditingTask(task)}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
+                  className="p-1.5 rounded-lg transition-colors hover:bg-[var(--card)] flex-shrink-0"
                   style={{ color: "var(--muted-foreground)" }}>
                   <Pencil size={11} />
                 </button>
                 <button onClick={() => onRemoveTask(task.id)}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
+                  className="p-1.5 rounded-lg transition-colors hover:bg-[var(--card)] flex-shrink-0"
                   style={{ color: "var(--dusty-rose)" }}>
                   <Trash2 size={11} />
                 </button>
@@ -356,17 +307,46 @@ function SharedProjectCard({ p, tasks, onAddTask, onToggle, onUpdateTask, onRemo
         </div>
       </Card>
 
-      {addingTask && (
-        <AddTaskToProjectModal project={p} onClose={() => setAddingTask(false)} onAdd={onAddTask} />
-      )}
-      {editingProject && (
-        <SharedProjectEditModal project={p} onClose={() => setEditingProject(false)} onSave={onUpdate} />
-      )}
+      {addingTask && <AddTaskToProjectModal project={p} onClose={() => setAddingTask(false)} onAdd={onAddTask} />}
+      {editingProject && <SharedProjectEditModal project={p} onClose={() => setEditingProject(false)} onSave={onUpdate} />}
       {editingTask && (
         <SharedTaskEditModal task={editingTask} onClose={() => setEditingTask(null)}
-          onSave={(title, who) => onUpdateTask(editingTask.id, title, who)} />
+          onSave={(title) => onUpdateTask(editingTask.id, title)} />
       )}
     </>
+  )
+}
+
+// ── Finance helpers ─────────────────────────────────────────────────────────
+
+function WhoSelector({ who, onChange }: { who: string; onChange: (w: string) => void }) {
+  return (
+    <div className="flex gap-2">
+      {(["B", "J", "BJ"] as const).map(w => (
+        <button key={w} onClick={() => onChange(w)}
+          className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
+          style={{
+            background: who === w ? (w === "B" ? "var(--dusty-rose)" : w === "J" ? "var(--sky-blue)" : "var(--golden)") : "var(--muted)",
+            color: who === w ? "white" : "var(--muted-foreground)",
+          }}>
+          {w === "BJ" ? "Casal" : w}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function WhoAvatars({ who }: { who: string }) {
+  const people = who === "BJ" ? ["B", "J"] : [who]
+  return (
+    <div className="flex -space-x-1">
+      {people.map(p => (
+        <div key={p} className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white border border-[var(--card)]"
+          style={{ background: p === "B" ? "var(--dusty-rose)" : "var(--sky-blue)" }}>
+          {p}
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -709,7 +689,6 @@ export default function UsPage() {
                           style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
                           {task.title}
                         </span>
-                        <WhoAvatars who={task.who} />
                         <button onClick={() => setEditingStandaloneTask(task)}
                           className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
                           style={{ color: "var(--muted-foreground)" }}>
@@ -749,11 +728,11 @@ export default function UsPage() {
                 <div className="space-y-3">
                   {projects.map(p => (
                     <SharedProjectCard key={p.id} p={p} tasks={sharedTasks}
-                      onAddTask={(title, who) => addSharedTask(title, who, p.id)}
+                      onAddTask={(title) => addSharedTask(title, "BJ", p.id)}
                       onToggle={toggleTask}
-                      onUpdateTask={(id, title, who) => updateSharedTask(id, { title, who })}
+                      onUpdateTask={(id, title) => updateSharedTask(id, { title })}
                       onRemoveTask={removeTask}
-                      onUpdate={(title, who, outcome) => updateSharedProject(p.id, { title, who, outcome })}
+                      onUpdate={(title, outcome) => updateSharedProject(p.id, { title, outcome })}
                       onRemove={() => removeProject(p.id)}
                     />
                   ))}
@@ -964,14 +943,14 @@ export default function UsPage() {
       )}
 
       {addingTx && <AddTransactionModal onClose={() => setAddingTx(false)} onAdd={tx => addTx(tx)} />}
-      {addingTask && <AddSharedTaskModal onClose={() => setAddingTask(false)} onAdd={(title, who) => addSharedTask(title, who)} />}
-      {addingProject && <AddSharedProjectModal onClose={() => setAddingProject(false)} onAdd={(title, who, outcome) => addProject(title, who, outcome)} />}
+      {addingTask && <AddSharedTaskModal onClose={() => setAddingTask(false)} onAdd={(title) => addSharedTask(title, "BJ")} />}
+      {addingProject && <AddSharedProjectModal onClose={() => setAddingProject(false)} onAdd={(title, outcome) => addProject(title, "BJ", outcome)} />}
       {addingGoal && <AddGoalModal onClose={() => setAddingGoal(false)} onAdd={(label, target, color) => addGoal({ label, target_amount: target, color })} />}
       {editingStandaloneTask && (
         <SharedTaskEditModal
           task={editingStandaloneTask}
           onClose={() => setEditingStandaloneTask(null)}
-          onSave={(title, who) => updateSharedTask(editingStandaloneTask.id, { title, who })}
+          onSave={(title) => updateSharedTask(editingStandaloneTask.id, { title })}
         />
       )}
     </div>
