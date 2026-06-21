@@ -26,7 +26,7 @@ export function useTasks() {
     load()
   }, [])
 
-  const add = async (task: Omit<Task, "id" | "done" | "due_date"> & { project_id?: string | null }) => {
+  const add = async (task: Omit<Task, "id" | "done" | "due_date" | "project_id"> & { project_id?: string | null }) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data, error } = await supabase
