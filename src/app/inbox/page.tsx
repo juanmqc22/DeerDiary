@@ -183,6 +183,14 @@ export default function InboxPage() {
           context: "@computador", area: "Trabalho", area_color: "var(--lavender)",
         })
       }
+    } else if (outcome === "project") {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from("projects").insert({
+          title: item.text, user_id: user.id,
+          area: "Trabalho", area_color: "var(--lavender)", outcome: "",
+        })
+      }
     }
 
     await remove(item.id)

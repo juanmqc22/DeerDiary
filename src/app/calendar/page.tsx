@@ -18,7 +18,7 @@ const EVENT_COLORS = [
   { label: "Saúde", color: "var(--soft-orange)" },
 ]
 
-const REVIEW_EVENT = { id: "__review__", title: "Revisão de domingo 🕊️", color: "var(--sage)", who: "BJ", isReview: true, time: null, date: "", created_at: "" }
+const REVIEW_EVENT = { id: "__review__", title: "Revisão de domingo 🕊️", color: "var(--sage)", who: "BJ", isReview: true, event_time: null, event_date: "", created_at: "" }
 
 function AddEventModal({ defaultDate, onClose, onAdd }: {
   defaultDate: string
@@ -97,6 +97,8 @@ function AddEventModal({ defaultDate, onClose, onAdd }: {
   )
 }
 
+
+
 export default function CalendarPage() {
   const router = useRouter()
   const now = new Date()
@@ -115,10 +117,10 @@ export default function CalendarPage() {
     const map: Record<number, typeof REVIEW_EVENT[]> = {}
     for (let d = 1; d <= daysInMonth; d++) {
       const dow = new Date(year, month, d).getDay()
-      if (dow === 0) map[d] = [{ ...REVIEW_EVENT, date: `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}` }]
+      if (dow === 0) map[d] = [{ ...REVIEW_EVENT, event_date: `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}` }]
     }
     dbEvents.forEach(ev => {
-      const d = parseInt(ev.date.slice(8, 10))
+      const d = parseInt(ev.event_date.slice(8, 10))
       if (!map[d]) map[d] = []
       map[d].push({ ...ev, isReview: false })
     })
@@ -139,7 +141,7 @@ export default function CalendarPage() {
 
   // Upcoming events (from today)
   const todayStr = now.toISOString().slice(0, 10)
-  const upcomingEvents = dbEvents.filter(ev => ev.date >= todayStr).slice(0, 5)
+  const upcomingEvents = dbEvents.filter(ev => ev.event_date >= todayStr).slice(0, 5)
 
   return (
     <div className="animate-fade-in">
@@ -234,8 +236,8 @@ export default function CalendarPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{ev.title}</p>
-                      {ev.time && (
-                        <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--muted-foreground)" }}>{ev.time}</p>
+                      {(ev as any).event_time && (
+                        <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--muted-foreground)" }}>{(ev as any).event_time}</p>
                       )}
                       {(ev as any).isReview && (
                         <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>Toque para iniciar a revisão →</p>
@@ -271,7 +273,7 @@ export default function CalendarPage() {
               </h2>
               <div className="flex flex-col gap-2">
                 {upcomingEvents.map(ev => {
-                  const d = parseInt(ev.date.slice(8, 10))
+                  const d = parseInt(ev.event_date.slice(8, 10))
                   return (
                     <div key={ev.id} onClick={() => setSelected(d)}
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-[var(--muted)] transition-colors cursor-pointer">
@@ -291,7 +293,7 @@ export default function CalendarPage() {
         <AddEventModal
           defaultDate={selectedDateStr || now.toISOString().slice(0, 10)}
           onClose={() => setAddingEvent(false)}
-          onAdd={(title, date, time, color, who) => add({ title, date, time, color, who })}
+          onAdd={(title, date, time, color, who) => add({ title, event_date: date, event_time: time, color, who })}
         />
       )}
     </div>

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 
 export type Transaction = {
   id: string
-  date: string
+  tx_date: string
   description: string
   amount: number
   type: "entrada" | "saída"
@@ -28,19 +28,21 @@ export function useTransactions(month: number, year: number) {
       const { data } = await supabase
         .from("transactions")
         .select("*")
-        .gte("date", from)
-        .lte("date", to)
-        .order("date", { ascending: false })
+        .gte("tx_date", from)
+        .lte("tx_date", to)
+        .order("tx_date", { ascending: false })
       setTransactions(data ?? [])
       setLoading(false)
     }
     load()
   }, [month, year])
 
-  const add = async (tx: Omit<Transaction, "id" | "created_at">) => {
+  const add = async (tx: { description: string; amount: number; type: "entrada" | "saída"; category: string; who: string }) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    const today = new Date().toISOString().slice(0, 10)
     const { data, error } = await supabase
       .from("transactions")
-      .insert(tx)
+      .insert({ ...tx, tx_date: today, created_by: user?.id })
       .select()
       .single()
     if (!error && data) setTransactions(prev => [data, ...prev])

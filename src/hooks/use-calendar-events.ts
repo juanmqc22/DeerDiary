@@ -6,9 +6,10 @@ import { createClient } from "@/lib/supabase/client"
 export type CalendarEvent = {
   id: string
   title: string
-  date: string
-  time: string | null
+  event_date: string
+  event_time: string | null
   color: string
+  who: string
   created_at: string
 }
 
@@ -26,24 +27,23 @@ export function useCalendarEvents(month: number, year: number) {
       const { data } = await supabase
         .from("calendar_events")
         .select("*")
-        .gte("date", from)
-        .lte("date", to)
-        .order("date", { ascending: true })
+        .gte("event_date", from)
+        .lte("event_date", to)
+        .order("event_date", { ascending: true })
       setEvents(data ?? [])
       setLoading(false)
     }
     load()
   }, [month, year])
 
-  const add = async (event: Omit<CalendarEvent, "id" | "created_at">) => {
+  const add = async (event: { title: string; event_date: string; event_time: string | null; color: string; who: string }) => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
     const { data, error } = await supabase
       .from("calendar_events")
-      .insert({ ...event, user_id: user.id })
+      .insert({ ...event, created_by: user?.id })
       .select()
       .single()
-    if (!error && data) setEvents(prev => [...prev, data].sort((a, b) => a.date.localeCompare(b.date)))
+    if (!error && data) setEvents(prev => [...prev, data].sort((a, b) => a.event_date.localeCompare(b.event_date)))
   }
 
   const remove = async (id: string) => {

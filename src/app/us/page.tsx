@@ -23,9 +23,8 @@ type FinanceTab = "transacoes" | "categorias" | "metas"
 
 function AddTransactionModal({ onClose, onAdd }: {
   onClose: () => void
-  onAdd: (tx: { date: string; description: string; amount: number; type: TxType; category: string; who: string }) => void
+  onAdd: (tx: { description: string; amount: number; type: TxType; category: string; who: string }) => void
 }) {
-  const today = new Date()
   const [type, setType] = useState<TxType>("saída")
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
@@ -34,8 +33,7 @@ function AddTransactionModal({ onClose, onAdd }: {
 
   const submit = () => {
     if (!description.trim() || !amount) return
-    const iso = today.toISOString().slice(0, 10)
-    onAdd({ date: iso, description: description.trim(), amount: parseFloat(amount.replace(",", ".")), type, category, who })
+    onAdd({ description: description.trim(), amount: parseFloat(amount.replace(",", ".")), type, category, who })
     onClose()
   }
 
@@ -393,7 +391,7 @@ export default function UsPage() {
                             style={{ background: CAT_COLORS[tx.category] + "20", color: CAT_COLORS[tx.category] }}>
                             {tx.category}
                           </span>
-                          <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>{formatDate(tx.date)}</span>
+                          <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>{formatDate(tx.tx_date)}</span>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
@@ -462,7 +460,7 @@ export default function UsPage() {
               {goalsLoading ? (
                 <p className="text-sm text-center py-4" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
               ) : goals.map(goal => {
-                const pct = Math.round((goal.current / goal.target) * 100)
+                const pct = Math.round((goal.current_amount / goal.target_amount) * 100)
                 return (
                   <Card key={goal.id} className="!p-4 group">
                     <div className="flex items-start justify-between mb-3">
@@ -480,11 +478,11 @@ export default function UsPage() {
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, background: goal.color }} />
                     </div>
                     <div className="flex justify-between text-xs" style={{ color: "var(--muted-foreground)" }}>
-                      <span>R$ {goal.current.toLocaleString("pt-BR")}</span>
-                      <span>R$ {goal.target.toLocaleString("pt-BR")}</span>
+                      <span>R$ {goal.current_amount.toLocaleString("pt-BR")}</span>
+                      <span>R$ {goal.target_amount.toLocaleString("pt-BR")}</span>
                     </div>
                     <p className="text-xs mt-2" style={{ color: "var(--muted-foreground)" }}>
-                      Faltam R$ {(goal.target - goal.current).toLocaleString("pt-BR")}
+                      Faltam R$ {(goal.target_amount - goal.current_amount).toLocaleString("pt-BR")}
                     </p>
                   </Card>
                 )
@@ -575,7 +573,7 @@ export default function UsPage() {
       {addingGoal && (
         <AddGoalModal
           onClose={() => setAddingGoal(false)}
-          onAdd={(label, target, color) => addGoal({ label, target, current: 0, color })}
+          onAdd={(label, target, color) => addGoal({ label, target_amount: target, color })}
         />
       )}
     </div>

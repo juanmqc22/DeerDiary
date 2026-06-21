@@ -419,7 +419,7 @@ export default function TasksPage() {
       {addingProject && (
         <AddProjectModal
           onClose={() => setAddingProject(false)}
-          onAdd={(title, area, outcome) => addProject({ title, area, area_color: AREA_COLORS[area], outcome: outcome || null })}
+          onAdd={(title, area, outcome) => addProject({ title, area, area_color: AREA_COLORS[area], outcome: outcome || "" })}
         />
       )}
     </div>

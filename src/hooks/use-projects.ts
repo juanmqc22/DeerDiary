@@ -8,7 +8,7 @@ export type Project = {
   title: string
   area: string
   area_color: string
-  outcome: string | null
+  outcome: string
   created_at: string
 }
 
@@ -21,7 +21,7 @@ export function useProjects() {
     const load = async () => {
       const { data } = await supabase
         .from("projects")
-        .select("*")
+        .select("id, title, area, area_color, outcome, created_at")
         .order("created_at", { ascending: false })
       setProjects(data ?? [])
       setLoading(false)
@@ -29,13 +29,13 @@ export function useProjects() {
     load()
   }, [])
 
-  const add = async (project: Omit<Project, "id" | "created_at">) => {
+  const add = async (project: { title: string; area: string; area_color: string; outcome: string }) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data, error } = await supabase
       .from("projects")
       .insert({ ...project, user_id: user.id })
-      .select()
+      .select("id, title, area, area_color, outcome, created_at")
       .single()
     if (!error && data) setProjects(prev => [data, ...prev])
   }
