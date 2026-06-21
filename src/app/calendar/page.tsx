@@ -32,9 +32,9 @@ function AddEventModal({ defaultDate, onClose, onAdd }: {
   const [who, setWho] = useState("BJ")
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow"
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
         style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
         <div className="flex items-center justify-between mb-4">
           <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Novo evento</p>

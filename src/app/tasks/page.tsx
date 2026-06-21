@@ -26,9 +26,9 @@ function AddProjectModal({ onClose, onAdd }: {
   const [outcome, setOutcome] = useState("")
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow"
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
         style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
         <div className="flex items-center justify-between mb-4">
           <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Novo projeto</p>
@@ -80,9 +80,9 @@ function AddTaskModal({ onClose, onAdd }: {
   const [area, setArea] = useState("Trabalho")
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow"
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
         style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
         <div className="flex items-center justify-between mb-4">
           <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova ação</p>
@@ -148,9 +148,9 @@ function AddTaskToProjectModal({ project, onClose, onAdd }: {
   const [title, setTitle] = useState("")
   const [context, setContext] = useState("@computador")
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow"
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
         style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
         <div className="flex items-center justify-between mb-1">
           <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova ação</p>
@@ -376,7 +376,7 @@ export default function TasksPage() {
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 w-full overflow-x-hidden">
       <PageHeader
         title="Tarefas"
         subtitle={
