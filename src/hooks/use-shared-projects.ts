@@ -37,10 +37,15 @@ export function useSharedProjects() {
     if (!error && data) setProjects(prev => [data, ...prev])
   }
 
+  const update = async (id: string, fields: Partial<Pick<SharedProject, "title" | "who" | "outcome">>) => {
+    await supabase.from("shared_projects").update(fields).eq("id", id)
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...fields } : p))
+  }
+
   const remove = async (id: string) => {
     await supabase.from("shared_projects").delete().eq("id", id)
     setProjects(prev => prev.filter(p => p.id !== id))
   }
 
-  return { projects, loading, add, remove }
+  return { projects, loading, add, update, remove }
 }

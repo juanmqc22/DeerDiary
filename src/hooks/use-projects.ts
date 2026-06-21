@@ -40,10 +40,15 @@ export function useProjects() {
     if (!error && data) setProjects(prev => [data, ...prev])
   }
 
+  const update = async (id: string, fields: Partial<Pick<Project, "title" | "area" | "area_color" | "outcome">>) => {
+    await supabase.from("projects").update(fields).eq("id", id)
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...fields } : p))
+  }
+
   const remove = async (id: string) => {
     await supabase.from("projects").delete().eq("id", id)
     setProjects(prev => prev.filter(p => p.id !== id))
   }
 
-  return { projects, loading, add, remove }
+  return { projects, loading, add, update, remove }
 }

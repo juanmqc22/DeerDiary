@@ -43,10 +43,15 @@ export function useSharedTasks() {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, done } : t))
   }
 
+  const update = async (id: string, fields: Partial<Pick<SharedTask, "title" | "who">>) => {
+    await supabase.from("shared_tasks").update(fields).eq("id", id)
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...fields } : t))
+  }
+
   const remove = async (id: string) => {
     await supabase.from("shared_tasks").delete().eq("id", id)
     setTasks(prev => prev.filter(t => t.id !== id))
   }
 
-  return { tasks, loading, add, toggle, remove }
+  return { tasks, loading, add, toggle, update, remove }
 }

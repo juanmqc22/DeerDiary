@@ -1,7 +1,7 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, Circle, Plus, TrendingUp, BookHeart, ChevronLeft, ChevronRight, X, ArrowDownLeft, ArrowUpRight, Trash2, ChevronDown, ChevronUp } from "lucide-react"
+import { CheckCircle2, Circle, Plus, TrendingUp, BookHeart, ChevronLeft, ChevronRight, X, ArrowDownLeft, ArrowUpRight, Trash2, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useSharedTasks, SharedTask } from "@/hooks/use-shared-tasks"
 import { useSharedProjects, SharedProject } from "@/hooks/use-shared-projects"
@@ -169,16 +169,89 @@ function WhoAvatars({ who }: { who: string }) {
 
 // ── Shared Project Card ─────────────────────────────────────────────────────
 
-function SharedProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: {
+function SharedTaskEditModal({ task, onClose, onSave }: {
+  task: SharedTask; onClose: () => void; onSave: (title: string, who: string) => void
+}) {
+  const [title, setTitle] = useState(task.title)
+  const [who, setWho] = useState(task.who)
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
+        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Editar ação</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
+            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
+        </div>
+        <div className="space-y-3">
+          <input value={title} onChange={e => setTitle(e.target.value)} autoFocus
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
+          <WhoSelector who={who} onChange={setWho} />
+          <button onClick={() => { if (title.trim()) { onSave(title.trim(), who); onClose() } }}
+            disabled={!title.trim()}
+            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+            style={{ background: "var(--soft-orange)" }}>
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SharedProjectEditModal({ project, onClose, onSave }: {
+  project: SharedProject; onClose: () => void; onSave: (title: string, who: string, outcome: string) => void
+}) {
+  const [title, setTitle] = useState(project.title)
+  const [who, setWho] = useState(project.who)
+  const [outcome, setOutcome] = useState(project.outcome)
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
+        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Editar projeto</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
+            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
+        </div>
+        <div className="space-y-3">
+          <input value={title} onChange={e => setTitle(e.target.value)} autoFocus
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
+          <input value={outcome} onChange={e => setOutcome(e.target.value)}
+            placeholder="Resultado desejado (opcional)"
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
+          <WhoSelector who={who} onChange={setWho} />
+          <button onClick={() => { if (title.trim()) { onSave(title.trim(), who, outcome.trim()); onClose() } }}
+            disabled={!title.trim()}
+            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+            style={{ background: "var(--golden)" }}>
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SharedProjectCard({ p, tasks, onAddTask, onToggle, onUpdateTask, onRemoveTask, onUpdate, onRemove }: {
   p: SharedProject
   tasks: SharedTask[]
   onAddTask: (title: string, who: string) => void
   onToggle: (id: string, done: boolean) => void
+  onUpdateTask: (id: string, title: string, who: string) => void
   onRemoveTask: (id: string) => void
+  onUpdate: (title: string, who: string, outcome: string) => void
   onRemove: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const [addingTask, setAddingTask] = useState(false)
+  const [editingProject, setEditingProject] = useState(false)
+  const [editingTask, setEditingTask] = useState<SharedTask | null>(null)
 
   const projectTasks = tasks.filter(t => t.project_id === p.id)
   const doneTasks = projectTasks.filter(t => t.done).length
@@ -188,16 +261,21 @@ function SharedProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemo
 
   return (
     <>
-      <Card className="group">
+      <Card>
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold mt-0.5" style={{ color: "var(--foreground)" }}>{p.title}</h3>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <WhoAvatars who={p.who} />
             <span className="text-sm font-bold" style={{ color: projectColor }}>{pct}%</span>
+            <button onClick={() => setEditingProject(true)}
+              className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
+              style={{ color: "var(--muted-foreground)" }}>
+              <Pencil size={12} />
+            </button>
             <button onClick={onRemove}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all"
+              className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
               style={{ color: "var(--dusty-rose)" }}>
               <Trash2 size={12} />
             </button>
@@ -228,12 +306,12 @@ function SharedProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemo
           <div className="space-y-1 mb-3">
             {projectTasks.length === 0 && (
               <p className="text-xs text-center py-2" style={{ color: "var(--muted-foreground)" }}>
-                Nenhuma ação ainda. Adicione abaixo.
+                Nenhuma ação ainda.
               </p>
             )}
             {projectTasks.map(task => (
               <div key={task.id}
-                className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors group/task">
+                className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors">
                 <button onClick={() => onToggle(task.id, !task.done)} className="flex-shrink-0">
                   {task.done
                     ? <CheckCircle2 size={16} style={{ color: "var(--sage)" }} />
@@ -245,8 +323,13 @@ function SharedProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemo
                   {task.title}
                 </span>
                 <WhoAvatars who={task.who} />
+                <button onClick={() => setEditingTask(task)}
+                  className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
+                  style={{ color: "var(--muted-foreground)" }}>
+                  <Pencil size={11} />
+                </button>
                 <button onClick={() => onRemoveTask(task.id)}
-                  className="opacity-0 group-hover/task:opacity-100 p-1 rounded-lg transition-all flex-shrink-0"
+                  className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
                   style={{ color: "var(--dusty-rose)" }}>
                   <Trash2 size={11} />
                 </button>
@@ -274,11 +357,14 @@ function SharedProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemo
       </Card>
 
       {addingTask && (
-        <AddTaskToProjectModal
-          project={p}
-          onClose={() => setAddingTask(false)}
-          onAdd={onAddTask}
-        />
+        <AddTaskToProjectModal project={p} onClose={() => setAddingTask(false)} onAdd={onAddTask} />
+      )}
+      {editingProject && (
+        <SharedProjectEditModal project={p} onClose={() => setEditingProject(false)} onSave={onUpdate} />
+      )}
+      {editingTask && (
+        <SharedTaskEditModal task={editingTask} onClose={() => setEditingTask(null)}
+          onSave={(title, who) => onUpdateTask(editingTask.id, title, who)} />
       )}
     </>
   )
@@ -514,14 +600,15 @@ export default function UsPage() {
   const [addingTask, setAddingTask] = useState(false)
   const [addingProject, setAddingProject] = useState(false)
   const [addingGoal, setAddingGoal] = useState(false)
+  const [editingStandaloneTask, setEditingStandaloneTask] = useState<import("@/hooks/use-shared-tasks").SharedTask | null>(null)
   const [diaryText, setDiaryText] = useState("")
   const [activeAuthor, setActiveAuthor] = useState<"B" | "J">("B")
 
   const displayMonthIdx = (now.getMonth() + monthOffset + 120) % 12
   const displayYear = now.getFullYear() + Math.floor((now.getMonth() + monthOffset) / 12)
 
-  const { tasks: sharedTasks, loading: tasksLoading, add: addSharedTask, toggle: toggleTask, remove: removeTask } = useSharedTasks()
-  const { projects, loading: projectsLoading, add: addProject, remove: removeProject } = useSharedProjects()
+  const { tasks: sharedTasks, loading: tasksLoading, add: addSharedTask, toggle: toggleTask, update: updateSharedTask, remove: removeTask } = useSharedTasks()
+  const { projects, loading: projectsLoading, add: addProject, update: updateSharedProject, remove: removeProject } = useSharedProjects()
   const { transactions, loading: txLoading, add: addTx, remove: removeTx } = useTransactions(displayMonthIdx, displayYear)
   const { goals, loading: goalsLoading, add: addGoal, updateAmount, remove: removeGoal } = useSavingsGoals()
   const { entries, add: addEntry, remove: removeEntry } = useDiary()
@@ -611,7 +698,7 @@ export default function UsPage() {
                 ) : (
                   <div className="flex flex-col gap-1">
                     {standaloneTasks.map(task => (
-                      <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--muted)] transition-colors group">
+                      <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--muted)] transition-colors">
                         <button onClick={() => toggleTask(task.id, !task.done)} className="flex-shrink-0">
                           {task.done
                             ? <CheckCircle2 size={18} style={{ color: "var(--sage)" }} />
@@ -623,8 +710,13 @@ export default function UsPage() {
                           {task.title}
                         </span>
                         <WhoAvatars who={task.who} />
+                        <button onClick={() => setEditingStandaloneTask(task)}
+                          className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
+                          style={{ color: "var(--muted-foreground)" }}>
+                          <Pencil size={12} />
+                        </button>
                         <button onClick={() => removeTask(task.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all flex-shrink-0"
+                          className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
                           style={{ color: "var(--dusty-rose)" }}>
                           <Trash2 size={12} />
                         </button>
@@ -659,7 +751,9 @@ export default function UsPage() {
                     <SharedProjectCard key={p.id} p={p} tasks={sharedTasks}
                       onAddTask={(title, who) => addSharedTask(title, who, p.id)}
                       onToggle={toggleTask}
+                      onUpdateTask={(id, title, who) => updateSharedTask(id, { title, who })}
                       onRemoveTask={removeTask}
+                      onUpdate={(title, who, outcome) => updateSharedProject(p.id, { title, who, outcome })}
                       onRemove={() => removeProject(p.id)}
                     />
                   ))}
@@ -873,6 +967,13 @@ export default function UsPage() {
       {addingTask && <AddSharedTaskModal onClose={() => setAddingTask(false)} onAdd={(title, who) => addSharedTask(title, who)} />}
       {addingProject && <AddSharedProjectModal onClose={() => setAddingProject(false)} onAdd={(title, who, outcome) => addProject(title, who, outcome)} />}
       {addingGoal && <AddGoalModal onClose={() => setAddingGoal(false)} onAdd={(label, target, color) => addGoal({ label, target_amount: target, color })} />}
+      {editingStandaloneTask && (
+        <SharedTaskEditModal
+          task={editingStandaloneTask}
+          onClose={() => setEditingStandaloneTask(null)}
+          onSave={(title, who) => updateSharedTask(editingStandaloneTask.id, { title, who })}
+        />
+      )}
     </div>
   )
 }

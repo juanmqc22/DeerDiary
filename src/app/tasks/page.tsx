@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/page-header"
-import { CheckCircle2, Circle, Plus, Trash2, X, ChevronDown, ChevronUp } from "lucide-react"
+import { CheckCircle2, Circle, Plus, Trash2, X, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useTasks, Task } from "@/hooks/use-tasks"
 import { useSomeday } from "@/hooks/use-someday"
@@ -17,128 +17,154 @@ const AREA_COLORS: Record<string, string> = {
 }
 const contexts = ["@computador", "@ligações", "@recados", "@casa", "@aguardando"]
 
-function AddProjectModal({ onClose, onAdd }: {
-  onClose: () => void
-  onAdd: (title: string, area: string, outcome: string) => void
-}) {
-  const [title, setTitle] = useState("")
-  const [area, setArea] = useState("Trabalho")
-  const [outcome, setOutcome] = useState("")
+// ── Shared modal shell ──────────────────────────────────────────────────────
 
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
       <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
         style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Novo projeto</p>
+          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>{title}</p>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
             style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
         </div>
-        <div className="space-y-3">
-          <input value={title} onChange={e => setTitle(e.target.value)}
-            placeholder="Nome do projeto"
-            className="w-full text-sm p-3 rounded-xl outline-none"
-            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
-            autoFocus />
-          <input value={outcome} onChange={e => setOutcome(e.target.value)}
-            placeholder="Resultado desejado (opcional)"
-            className="w-full text-sm p-3 rounded-xl outline-none"
-            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Área</p>
-            <div className="flex flex-wrap gap-1.5">
-              {AREAS.map(a => (
-                <button key={a} onClick={() => setArea(a)}
-                  className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: area === a ? AREA_COLORS[a] : "var(--muted)",
-                    color: area === a ? "white" : "var(--muted-foreground)",
-                  }}>{a}</button>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={() => { if (title.trim()) { onAdd(title.trim(), area, outcome.trim()); onClose() } }}
-            disabled={!title.trim()}
-            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
-            style={{ background: "var(--golden)" }}>
-            Criar projeto
-          </button>
-        </div>
+        {children}
       </div>
     </div>
   )
 }
 
-function AddTaskModal({ onClose, onAdd }: {
+// ── Row action buttons (edit + delete) ──────────────────────────────────────
+
+function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="flex items-center gap-0.5 flex-shrink-0">
+      <button onClick={onEdit}
+        className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
+        style={{ color: "var(--muted-foreground)" }}>
+        <Pencil size={12} />
+      </button>
+      <button onClick={onDelete}
+        className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
+        style={{ color: "var(--dusty-rose)" }}>
+        <Trash2 size={12} />
+      </button>
+    </div>
+  )
+}
+
+// ── Task modal (shared by add + edit) ──────────────────────────────────────
+
+function TaskModal({ initial, title, submitLabel, onClose, onSubmit }: {
+  initial?: { title: string; context: string; area: string }
+  title: string
+  submitLabel: string
   onClose: () => void
-  onAdd: (title: string, context: string, area: string) => void
+  onSubmit: (title: string, context: string, area: string) => void
 }) {
-  const [title, setTitle] = useState("")
-  const [context, setContext] = useState("@computador")
-  const [area, setArea] = useState("Trabalho")
+  const [taskTitle, setTaskTitle] = useState(initial?.title ?? "")
+  const [context, setContext] = useState(initial?.context ?? "@computador")
+  const [area, setArea] = useState(initial?.area ?? "Trabalho")
+
+  const submit = () => {
+    if (!taskTitle.trim()) return
+    onSubmit(taskTitle.trim(), context, area)
+    onClose()
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
-        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova ação</p>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
-            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
-        </div>
-
-        <div className="space-y-3">
-          <input value={title} onChange={e => setTitle(e.target.value)}
-            placeholder="O que precisa ser feito?"
-            className="w-full text-sm p-3 rounded-xl outline-none"
-            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
-            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), context, area), onClose())}
-            autoFocus
-          />
-
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Contexto</p>
-            <div className="flex flex-wrap gap-1.5">
-              {contexts.map(c => (
-                <button key={c} onClick={() => setContext(c)}
-                  className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: context === c ? "var(--foreground)" : "var(--muted)",
-                    color: context === c ? "white" : "var(--muted-foreground)",
-                  }}>{c}</button>
-              ))}
-            </div>
+    <Modal title={title} onClose={onClose}>
+      <div className="space-y-3">
+        <input value={taskTitle} onChange={e => setTaskTitle(e.target.value)}
+          placeholder="O que precisa ser feito?" autoFocus
+          className="w-full text-sm p-3 rounded-xl outline-none"
+          style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
+          onKeyDown={e => e.key === "Enter" && submit()} />
+        <div>
+          <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Contexto</p>
+          <div className="flex flex-wrap gap-1.5">
+            {contexts.map(c => (
+              <button key={c} onClick={() => setContext(c)}
+                className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                style={{ background: context === c ? "var(--foreground)" : "var(--muted)", color: context === c ? "white" : "var(--muted-foreground)" }}>
+                {c}
+              </button>
+            ))}
           </div>
-
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Área</p>
-            <div className="flex flex-wrap gap-1.5">
-              {AREAS.map(a => (
-                <button key={a} onClick={() => setArea(a)}
-                  className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: area === a ? AREA_COLORS[a] : "var(--muted)",
-                    color: area === a ? "white" : "var(--muted-foreground)",
-                  }}>{a}</button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => { if (title.trim()) { onAdd(title.trim(), context, area); onClose() } }}
-            disabled={!title.trim()}
-            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
-            style={{ background: "var(--soft-orange)" }}>
-            Adicionar ação
-          </button>
         </div>
+        <div>
+          <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Área</p>
+          <div className="flex flex-wrap gap-1.5">
+            {AREAS.map(a => (
+              <button key={a} onClick={() => setArea(a)}
+                className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                style={{ background: area === a ? AREA_COLORS[a] : "var(--muted)", color: area === a ? "white" : "var(--muted-foreground)" }}>
+                {a}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button onClick={submit} disabled={!taskTitle.trim()}
+          className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+          style={{ background: "var(--soft-orange)" }}>
+          {submitLabel}
+        </button>
       </div>
-    </div>
+    </Modal>
   )
 }
+
+// ── Project modal (shared by add + edit) ────────────────────────────────────
+
+function ProjectModal({ initial, title, submitLabel, submitColor, onClose, onSubmit }: {
+  initial?: { title: string; area: string; outcome: string }
+  title: string
+  submitLabel: string
+  submitColor: string
+  onClose: () => void
+  onSubmit: (title: string, area: string, outcome: string) => void
+}) {
+  const [projTitle, setProjTitle] = useState(initial?.title ?? "")
+  const [area, setArea] = useState(initial?.area ?? "Trabalho")
+  const [outcome, setOutcome] = useState(initial?.outcome ?? "")
+
+  return (
+    <Modal title={title} onClose={onClose}>
+      <div className="space-y-3">
+        <input value={projTitle} onChange={e => setProjTitle(e.target.value)}
+          placeholder="Nome do projeto" autoFocus
+          className="w-full text-sm p-3 rounded-xl outline-none"
+          style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
+        <input value={outcome} onChange={e => setOutcome(e.target.value)}
+          placeholder="Resultado desejado (opcional)"
+          className="w-full text-sm p-3 rounded-xl outline-none"
+          style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
+        <div>
+          <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Área</p>
+          <div className="flex flex-wrap gap-1.5">
+            {AREAS.map(a => (
+              <button key={a} onClick={() => setArea(a)}
+                className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                style={{ background: area === a ? AREA_COLORS[a] : "var(--muted)", color: area === a ? "white" : "var(--muted-foreground)" }}>
+                {a}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button onClick={() => { if (projTitle.trim()) { onSubmit(projTitle.trim(), area, outcome.trim()); onClose() } }}
+          disabled={!projTitle.trim()}
+          className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+          style={{ background: submitColor }}>
+          {submitLabel}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Add task inside project ─────────────────────────────────────────────────
 
 function AddTaskToProjectModal({ project, onClose, onAdd }: {
   project: Project
@@ -148,58 +174,53 @@ function AddTaskToProjectModal({ project, onClose, onAdd }: {
   const [title, setTitle] = useState("")
   const [context, setContext] = useState("@computador")
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
-        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova ação</p>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
-            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
-        </div>
-        <p className="text-xs mb-4" style={{ color: "var(--muted-foreground)" }}>Projeto: {project.title}</p>
-        <div className="space-y-3">
-          <input value={title} onChange={e => setTitle(e.target.value)}
-            placeholder="O que precisa ser feito?"
-            className="w-full text-sm p-3 rounded-xl outline-none"
-            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
-            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), context), onClose())}
-            autoFocus />
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Contexto</p>
-            <div className="flex flex-wrap gap-1.5">
-              {contexts.map(c => (
-                <button key={c} onClick={() => setContext(c)}
-                  className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: context === c ? "var(--foreground)" : "var(--muted)",
-                    color: context === c ? "white" : "var(--muted-foreground)",
-                  }}>{c}</button>
-              ))}
-            </div>
+    <Modal title="Nova ação" onClose={onClose}>
+      <p className="text-xs -mt-2 mb-3" style={{ color: "var(--muted-foreground)" }}>Projeto: {project.title}</p>
+      <div className="space-y-3">
+        <input value={title} onChange={e => setTitle(e.target.value)}
+          placeholder="O que precisa ser feito?" autoFocus
+          className="w-full text-sm p-3 rounded-xl outline-none"
+          style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
+          onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), context), onClose())} />
+        <div>
+          <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Contexto</p>
+          <div className="flex flex-wrap gap-1.5">
+            {contexts.map(c => (
+              <button key={c} onClick={() => setContext(c)}
+                className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                style={{ background: context === c ? "var(--foreground)" : "var(--muted)", color: context === c ? "white" : "var(--muted-foreground)" }}>
+                {c}
+              </button>
+            ))}
           </div>
-          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), context); onClose() } }}
-            disabled={!title.trim()}
-            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
-            style={{ background: project.area_color }}>
-            Adicionar ação
-          </button>
         </div>
+        <button onClick={() => { if (title.trim()) { onAdd(title.trim(), context); onClose() } }}
+          disabled={!title.trim()}
+          className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+          style={{ background: project.area_color }}>
+          Adicionar ação
+        </button>
       </div>
-    </div>
+    </Modal>
   )
 }
 
-function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: {
+// ── Project Card ────────────────────────────────────────────────────────────
+
+function ProjectCard({ p, tasks, onAddTask, onToggle, onUpdateTask, onRemoveTask, onUpdate, onRemove }: {
   p: Project
   tasks: Task[]
   onAddTask: (title: string, context: string) => void
   onToggle: (id: string, done: boolean) => void
+  onUpdateTask: (id: string, title: string, context: string, area: string) => void
   onRemoveTask: (id: string) => void
+  onUpdate: (title: string, area: string, outcome: string) => void
   onRemove: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const [addingTask, setAddingTask] = useState(false)
+  const [editingProject, setEditingProject] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   const projectTasks = tasks.filter(t => t.project_id === p.id)
   const doneTasks = projectTasks.filter(t => t.done).length
@@ -208,8 +229,7 @@ function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: 
 
   return (
     <>
-      <Card className="group">
-        {/* Header */}
+      <Card>
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex-1 min-w-0">
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
@@ -218,10 +238,15 @@ function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: 
             </span>
             <h3 className="text-sm font-semibold mt-1.5" style={{ color: "var(--foreground)" }}>{p.title}</h3>
           </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <span className="text-sm font-bold" style={{ color: p.area_color }}>{pct}%</span>
+            <button onClick={() => setEditingProject(true)}
+              className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
+              style={{ color: "var(--muted-foreground)" }}>
+              <Pencil size={12} />
+            </button>
             <button onClick={onRemove}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all"
+              className="p-1.5 rounded-lg transition-colors hover:bg-[var(--muted)]"
               style={{ color: "var(--dusty-rose)" }}>
               <Trash2 size={12} />
             </button>
@@ -232,12 +257,10 @@ function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: 
           <p className="text-xs mb-3" style={{ color: "var(--muted-foreground)" }}>→ {p.outcome}</p>
         )}
 
-        {/* Barra de progresso */}
         <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "var(--muted)" }}>
           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: p.area_color }} />
         </div>
 
-        {/* Próxima ação (colapsado) */}
         {!expanded && (
           nextAction ? (
             <div className="flex items-center gap-2 p-2.5 rounded-xl mb-3" style={{ background: "var(--muted)" }}>
@@ -253,17 +276,16 @@ function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: 
           ) : null
         )}
 
-        {/* Lista expandida */}
         {expanded && (
           <div className="space-y-1 mb-3">
             {projectTasks.length === 0 && (
               <p className="text-xs text-center py-2" style={{ color: "var(--muted-foreground)" }}>
-                Nenhuma ação ainda. Adicione abaixo.
+                Nenhuma ação ainda.
               </p>
             )}
             {projectTasks.map(task => (
               <div key={task.id}
-                className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors group/task">
+                className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors">
                 <button onClick={() => onToggle(task.id, !task.done)} className="flex-shrink-0">
                   {task.done
                     ? <CheckCircle2 size={16} style={{ color: "var(--sage)" }} />
@@ -277,11 +299,10 @@ function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: 
                 <span className="text-[10px] flex-shrink-0" style={{ color: "var(--muted-foreground)" }}>
                   {task.context}
                 </span>
-                <button onClick={() => onRemoveTask(task.id)}
-                  className="opacity-0 group-hover/task:opacity-100 p-1 rounded-lg transition-all flex-shrink-0"
-                  style={{ color: "var(--dusty-rose)" }}>
-                  <Trash2 size={11} />
-                </button>
+                <RowActions
+                  onEdit={() => setEditingTask(task)}
+                  onDelete={() => onRemoveTask(task.id)}
+                />
               </div>
             ))}
             <button onClick={() => setAddingTask(true)}
@@ -293,7 +314,6 @@ function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: 
           </div>
         )}
 
-        {/* Rodapé: contador + expandir */}
         <div className="flex items-center justify-between">
           <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
             {doneTasks}/{projectTasks.length} ações
@@ -307,23 +327,40 @@ function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: 
       </Card>
 
       {addingTask && (
-        <AddTaskToProjectModal
-          project={p}
-          onClose={() => setAddingTask(false)}
-          onAdd={onAddTask}
+        <AddTaskToProjectModal project={p} onClose={() => setAddingTask(false)} onAdd={onAddTask} />
+      )}
+      {editingProject && (
+        <ProjectModal
+          initial={{ title: p.title, area: p.area, outcome: p.outcome }}
+          title="Editar projeto"
+          submitLabel="Salvar"
+          submitColor={p.area_color}
+          onClose={() => setEditingProject(false)}
+          onSubmit={onUpdate}
+        />
+      )}
+      {editingTask && (
+        <TaskModal
+          initial={{ title: editingTask.title, context: editingTask.context, area: editingTask.area }}
+          title="Editar ação"
+          submitLabel="Salvar"
+          onClose={() => setEditingTask(null)}
+          onSubmit={(title, context, area) => onUpdateTask(editingTask.id, title, context, area)}
         />
       )}
     </>
   )
 }
 
-function ProjectsTab({ projects, tasks, loading, onAddTask, onToggleTask, onRemoveTask, onRemoveProject }: {
+function ProjectsTab({ projects, tasks, loading, onAddTask, onToggleTask, onUpdateTask, onRemoveTask, onUpdateProject, onRemoveProject }: {
   projects: Project[]
   tasks: Task[]
   loading: boolean
   onAddTask: (title: string, context: string, area: string, projectId: string) => void
   onToggleTask: (id: string, done: boolean) => void
+  onUpdateTask: (id: string, title: string, context: string, area: string) => void
   onRemoveTask: (id: string) => void
+  onUpdateProject: (id: string, title: string, area: string, outcome: string) => void
   onRemoveProject: (id: string) => void
 }) {
   if (loading) return <div className="text-center py-8"><p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Carregando...</p></div>
@@ -339,7 +376,9 @@ function ProjectsTab({ projects, tasks, loading, onAddTask, onToggleTask, onRemo
         <ProjectCard key={p.id} p={p} tasks={tasks}
           onAddTask={(title, ctx) => onAddTask(title, ctx, p.area, p.id)}
           onToggle={onToggleTask}
+          onUpdateTask={onUpdateTask}
           onRemoveTask={onRemoveTask}
+          onUpdate={(title, area, outcome) => onUpdateProject(p.id, title, area, outcome)}
           onRemove={() => onRemoveProject(p.id)}
         />
       ))}
@@ -348,14 +387,15 @@ function ProjectsTab({ projects, tasks, loading, onAddTask, onToggleTask, onRemo
 }
 
 export default function TasksPage() {
-  const { tasks, loading, add, toggle, remove } = useTasks()
+  const { tasks, loading, add, toggle, update, remove } = useTasks()
   const { items: someday, loading: somedayLoading, add: addSomeday, remove: removeSomeday } = useSomeday()
-  const { projects, loading: projectsLoading, add: addProject, remove: removeProject } = useProjects()
+  const { projects, loading: projectsLoading, add: addProject, update: updateProject, remove: removeProject } = useProjects()
   const [tab, setTab] = useState<Tab>("actions")
   const [context, setContext] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
   const [addingTask, setAddingTask] = useState(false)
   const [addingProject, setAddingProject] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [somedayInput, setSomedayInput] = useState("")
 
   const filtered = tasks.filter(a => {
@@ -451,7 +491,7 @@ export default function TasksPage() {
                   </p>
                   <Card className="divide-y overflow-hidden">
                     {acts.map(action => (
-                      <div key={action.id} className="flex items-center gap-3 p-3.5 hover:bg-[var(--muted)] transition-colors group">
+                      <div key={action.id} className="flex items-center gap-3 p-3 hover:bg-[var(--muted)] transition-colors">
                         <button onClick={() => toggle(action.id, !action.done)} className="flex-shrink-0">
                           {action.done
                             ? <CheckCircle2 size={17} style={{ color: "var(--sage)" }} />
@@ -473,11 +513,10 @@ export default function TasksPage() {
                           style={{ background: action.area_color + "20", color: action.area_color }}>
                           {action.area}
                         </span>
-                        <button onClick={() => remove(action.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-[var(--muted)] transition-all flex-shrink-0"
-                          style={{ color: "var(--dusty-rose)" }}>
-                          <Trash2 size={12} />
-                        </button>
+                        <RowActions
+                          onEdit={() => setEditingTask(action)}
+                          onDelete={() => remove(action.id)}
+                        />
                       </div>
                     ))}
                   </Card>
@@ -513,7 +552,9 @@ export default function TasksPage() {
             add({ title, context, area, area_color: AREA_COLORS[area], project_id: projectId })
           }
           onToggleTask={toggle}
+          onUpdateTask={(id, title, context, area) => update(id, { title, context, area, area_color: AREA_COLORS[area] })}
           onRemoveTask={remove}
+          onUpdateProject={(id, title, area, outcome) => updateProject(id, { title, area, area_color: AREA_COLORS[area], outcome })}
           onRemoveProject={removeProject}
         />
       )}
@@ -543,7 +584,7 @@ export default function TasksPage() {
           ) : (
             <div className="space-y-2">
               {someday.map(item => (
-                <Card key={item.id} className="flex items-center gap-3 group">
+                <Card key={item.id} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.text}</p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
@@ -551,7 +592,7 @@ export default function TasksPage() {
                     </p>
                   </div>
                   <button onClick={() => removeSomeday(item.id)}
-                    className="p-1.5 rounded-lg hover:bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+                    className="p-1.5 rounded-lg hover:bg-[var(--muted)] transition-all flex-shrink-0"
                     style={{ color: "var(--dusty-rose)" }}>
                     <Trash2 size={13} />
                   </button>
@@ -571,15 +612,29 @@ export default function TasksPage() {
       )}
 
       {addingTask && (
-        <AddTaskModal
+        <TaskModal
+          title="Nova ação"
+          submitLabel="Adicionar ação"
           onClose={() => setAddingTask(false)}
-          onAdd={(title, context, area) => add({ title, context, area, area_color: AREA_COLORS[area] })}
+          onSubmit={(title, context, area) => add({ title, context, area, area_color: AREA_COLORS[area] })}
         />
       )}
       {addingProject && (
-        <AddProjectModal
+        <ProjectModal
+          title="Novo projeto"
+          submitLabel="Criar projeto"
+          submitColor="var(--golden)"
           onClose={() => setAddingProject(false)}
-          onAdd={(title, area, outcome) => addProject({ title, area, area_color: AREA_COLORS[area], outcome: outcome || "" })}
+          onSubmit={(title, area, outcome) => addProject({ title, area, area_color: AREA_COLORS[area], outcome: outcome || "" })}
+        />
+      )}
+      {editingTask && (
+        <TaskModal
+          initial={{ title: editingTask.title, context: editingTask.context, area: editingTask.area }}
+          title="Editar ação"
+          submitLabel="Salvar"
+          onClose={() => setEditingTask(null)}
+          onSubmit={(title, context, area) => update(editingTask.id, { title, context, area, area_color: AREA_COLORS[area] })}
         />
       )}
     </div>
