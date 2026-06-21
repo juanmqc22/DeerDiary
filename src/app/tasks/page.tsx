@@ -2,11 +2,11 @@
 
 import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/page-header"
-import { CheckCircle2, Circle, Plus, Trash2, X } from "lucide-react"
+import { CheckCircle2, Circle, Plus, Trash2, X, ChevronDown, ChevronUp } from "lucide-react"
 import { useState } from "react"
-import { useTasks } from "@/hooks/use-tasks"
+import { useTasks, Task } from "@/hooks/use-tasks"
 import { useSomeday } from "@/hooks/use-someday"
-import { useProjects } from "@/hooks/use-projects"
+import { useProjects, Project } from "@/hooks/use-projects"
 
 type Tab = "actions" | "projects" | "someday"
 
@@ -136,6 +136,213 @@ function AddTaskModal({ onClose, onAdd }: {
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+function AddTaskToProjectModal({ project, onClose, onAdd }: {
+  project: Project
+  onClose: () => void
+  onAdd: (title: string, context: string) => void
+}) {
+  const [title, setTitle] = useState("")
+  const [context, setContext] = useState("@computador")
+  return (
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow"
+        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova ação</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
+            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
+        </div>
+        <p className="text-xs mb-4" style={{ color: "var(--muted-foreground)" }}>Projeto: {project.title}</p>
+        <div className="space-y-3">
+          <input value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="O que precisa ser feito?"
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
+            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), context), onClose())}
+            autoFocus />
+          <div>
+            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Contexto</p>
+            <div className="flex flex-wrap gap-1.5">
+              {contexts.map(c => (
+                <button key={c} onClick={() => setContext(c)}
+                  className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    background: context === c ? "var(--foreground)" : "var(--muted)",
+                    color: context === c ? "white" : "var(--muted-foreground)",
+                  }}>{c}</button>
+              ))}
+            </div>
+          </div>
+          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), context); onClose() } }}
+            disabled={!title.trim()}
+            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+            style={{ background: project.area_color }}>
+            Adicionar ação
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: {
+  p: Project
+  tasks: Task[]
+  onAddTask: (title: string, context: string) => void
+  onToggle: (id: string, done: boolean) => void
+  onRemoveTask: (id: string) => void
+  onRemove: () => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [addingTask, setAddingTask] = useState(false)
+
+  const projectTasks = tasks.filter(t => t.project_id === p.id)
+  const doneTasks = projectTasks.filter(t => t.done).length
+  const pct = projectTasks.length > 0 ? Math.round((doneTasks / projectTasks.length) * 100) : 0
+  const nextAction = projectTasks.find(t => !t.done)
+
+  return (
+    <>
+      <Card className="group">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex-1 min-w-0">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: p.area_color + "20", color: p.area_color }}>
+              {p.area}
+            </span>
+            <h3 className="text-sm font-semibold mt-1.5" style={{ color: "var(--foreground)" }}>{p.title}</h3>
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="text-sm font-bold" style={{ color: p.area_color }}>{pct}%</span>
+            <button onClick={onRemove}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all"
+              style={{ color: "var(--dusty-rose)" }}>
+              <Trash2 size={12} />
+            </button>
+          </div>
+        </div>
+
+        {p.outcome && (
+          <p className="text-xs mb-3" style={{ color: "var(--muted-foreground)" }}>→ {p.outcome}</p>
+        )}
+
+        {/* Barra de progresso */}
+        <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "var(--muted)" }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: p.area_color }} />
+        </div>
+
+        {/* Próxima ação (colapsado) */}
+        {!expanded && (
+          nextAction ? (
+            <div className="flex items-center gap-2 p-2.5 rounded-xl mb-3" style={{ background: "var(--muted)" }}>
+              <Circle size={12} style={{ color: "var(--soft-orange)", flexShrink: 0 }} />
+              <p className="text-xs flex-1 truncate" style={{ color: "var(--foreground)" }}>{nextAction.title}</p>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                style={{ background: "var(--card)", color: "var(--muted-foreground)" }}>
+                {nextAction.context}
+              </span>
+            </div>
+          ) : projectTasks.length > 0 ? (
+            <p className="text-xs text-center py-1 mb-3" style={{ color: "var(--sage)" }}>✓ Todas as ações concluídas!</p>
+          ) : null
+        )}
+
+        {/* Lista expandida */}
+        {expanded && (
+          <div className="space-y-1 mb-3">
+            {projectTasks.length === 0 && (
+              <p className="text-xs text-center py-2" style={{ color: "var(--muted-foreground)" }}>
+                Nenhuma ação ainda. Adicione abaixo.
+              </p>
+            )}
+            {projectTasks.map(task => (
+              <div key={task.id}
+                className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors group/task">
+                <button onClick={() => onToggle(task.id, !task.done)} className="flex-shrink-0">
+                  {task.done
+                    ? <CheckCircle2 size={16} style={{ color: "var(--sage)" }} />
+                    : <Circle size={16} style={{ color: "var(--card-border)" }} />
+                  }
+                </button>
+                <span className={`text-sm flex-1 min-w-0 truncate ${task.done ? "line-through" : ""}`}
+                  style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
+                  {task.title}
+                </span>
+                <span className="text-[10px] flex-shrink-0" style={{ color: "var(--muted-foreground)" }}>
+                  {task.context}
+                </span>
+                <button onClick={() => onRemoveTask(task.id)}
+                  className="opacity-0 group-hover/task:opacity-100 p-1 rounded-lg transition-all flex-shrink-0"
+                  style={{ color: "var(--dusty-rose)" }}>
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            ))}
+            <button onClick={() => setAddingTask(true)}
+              className="flex items-center gap-2 w-full px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors"
+              style={{ color: "var(--soft-orange)" }}>
+              <Plus size={14} />
+              <span className="text-xs font-semibold">Adicionar ação</span>
+            </button>
+          </div>
+        )}
+
+        {/* Rodapé: contador + expandir */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+            {doneTasks}/{projectTasks.length} ações
+          </span>
+          <button onClick={() => setExpanded(e => !e)}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg hover:bg-[var(--muted)] transition-colors"
+            style={{ color: "var(--muted-foreground)" }}>
+            {expanded ? <><ChevronUp size={13} /> Recolher</> : <><ChevronDown size={13} /> Ver ações</>}
+          </button>
+        </div>
+      </Card>
+
+      {addingTask && (
+        <AddTaskToProjectModal
+          project={p}
+          onClose={() => setAddingTask(false)}
+          onAdd={onAddTask}
+        />
+      )}
+    </>
+  )
+}
+
+function ProjectsTab({ projects, tasks, loading, onAddTask, onToggleTask, onRemoveTask, onRemoveProject }: {
+  projects: Project[]
+  tasks: Task[]
+  loading: boolean
+  onAddTask: (title: string, context: string, area: string, projectId: string) => void
+  onToggleTask: (id: string, done: boolean) => void
+  onRemoveTask: (id: string) => void
+  onRemoveProject: (id: string) => void
+}) {
+  if (loading) return <div className="text-center py-8"><p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Carregando...</p></div>
+  if (projects.length === 0) return (
+    <div className="text-center py-12">
+      <p className="text-3xl mb-2">📁</p>
+      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Nenhum projeto ainda.</p>
+    </div>
+  )
+  return (
+    <div className="space-y-3">
+      {projects.map(p => (
+        <ProjectCard key={p.id} p={p} tasks={tasks}
+          onAddTask={(title, ctx) => onAddTask(title, ctx, p.area, p.id)}
+          onToggle={onToggleTask}
+          onRemoveTask={onRemoveTask}
+          onRemove={() => onRemoveProject(p.id)}
+        />
+      ))}
     </div>
   )
 }
@@ -298,64 +505,17 @@ export default function TasksPage() {
 
       {/* Projetos */}
       {tab === "projects" && (
-        <div className="space-y-3">
-          {projectsLoading ? (
-            <div className="text-center py-8">
-              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
-            </div>
-          ) : projects.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-3xl mb-2">📁</p>
-              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Nenhum projeto ainda.</p>
-            </div>
-          ) : projects.map(p => {
-            const projectTasks = tasks.filter(t => t.project_id === p.id)
-            const doneTasks = projectTasks.filter(t => t.done).length
-            const pct = projectTasks.length > 0 ? Math.round((doneTasks / projectTasks.length) * 100) : 0
-            const nextAction = projectTasks.find(t => !t.done)
-            return (
-              <Card key={p.id} className="group">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: p.area_color + "20", color: p.area_color }}>
-                      {p.area}
-                    </span>
-                    <h3 className="text-sm font-semibold mt-1.5" style={{ color: "var(--foreground)" }}>{p.title}</h3>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-sm font-bold" style={{ color: p.area_color }}>{pct}%</span>
-                    <button onClick={() => removeProject(p.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all"
-                      style={{ color: "var(--dusty-rose)" }}>
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                </div>
-                {p.outcome && (
-                  <p className="text-xs mb-3" style={{ color: "var(--muted-foreground)" }}>→ {p.outcome}</p>
-                )}
-                <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "var(--muted)" }}>
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: p.area_color }} />
-                </div>
-                {nextAction ? (
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl" style={{ background: "var(--muted)" }}>
-                    <Circle size={12} style={{ color: "var(--soft-orange)", flexShrink: 0 }} />
-                    <p className="text-xs flex-1" style={{ color: "var(--foreground)" }}>{nextAction.title}</p>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
-                      style={{ background: "var(--card)", color: "var(--muted-foreground)" }}>
-                      {nextAction.context}
-                    </span>
-                  </div>
-                ) : projectTasks.length > 0 ? (
-                  <p className="text-xs text-center py-1" style={{ color: "var(--sage)" }}>✓ Todas as ações concluídas!</p>
-                ) : (
-                  <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Nenhuma ação vinculada ainda.</p>
-                )}
-              </Card>
-            )
-          })}
-        </div>
+        <ProjectsTab
+          projects={projects}
+          tasks={tasks}
+          loading={projectsLoading}
+          onAddTask={(title, context, area, projectId) =>
+            add({ title, context, area, area_color: AREA_COLORS[area], project_id: projectId })
+          }
+          onToggleTask={toggle}
+          onRemoveTask={remove}
+          onRemoveProject={removeProject}
+        />
       )}
 
       {/* Algum dia */}

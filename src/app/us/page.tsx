@@ -193,6 +193,117 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (label: 
   )
 }
 
+import { SavingsGoal } from "@/hooks/use-savings-goals"
+
+function GoalCard({ goal, onUpdate, onRemove }: {
+  goal: SavingsGoal
+  onUpdate: (id: string, amount: number) => void
+  onRemove: (id: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [inputValue, setInputValue] = useState(String(goal.current_amount))
+
+  const pct = Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100))
+  const fmt = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  const save = () => {
+    const parsed = parseFloat(inputValue.replace(",", "."))
+    if (!isNaN(parsed) && parsed >= 0) onUpdate(goal.id, parsed)
+    setEditing(false)
+  }
+
+  return (
+    <Card className="!p-4 group">
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-sm font-semibold flex-1 mr-2" style={{ color: "var(--foreground)" }}>{goal.label}</p>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-sm font-bold" style={{ color: goal.color }}>{pct}%</span>
+          <button onClick={() => onRemove(goal.id)}
+            className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all"
+            style={{ color: "var(--dusty-rose)" }}>
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+
+      <div className="h-3 rounded-full overflow-hidden mb-3" style={{ background: "var(--muted)" }}>
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: goal.color }} />
+      </div>
+
+      {/* Valor atual / edição */}
+      {editing ? (
+        <div className="flex items-center gap-2 p-2.5 rounded-xl mb-2" style={{ background: "var(--muted)" }}>
+          <span className="text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>R$</span>
+          <input
+            value={inputValue}
+            onChange={e => setInputValue(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && save()}
+            type="number"
+            autoFocus
+            className="flex-1 text-sm font-bold outline-none bg-transparent"
+            style={{ color: "var(--foreground)" }}
+          />
+          <button onClick={save}
+            className="text-xs font-bold px-2.5 py-1 rounded-lg text-white"
+            style={{ background: goal.color }}>
+            Salvar
+          </button>
+          <button onClick={() => setEditing(false)} className="text-xs px-1.5"
+            style={{ color: "var(--muted-foreground)" }}>✕</button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+            <span className="font-semibold" style={{ color: "var(--foreground)", fontSize: "0.9rem" }}>
+              R$ {fmt(goal.current_amount)}
+            </span>
+            {" "}de R$ {fmt(goal.target_amount)}
+          </div>
+          <button onClick={() => { setInputValue(String(goal.current_amount)); setEditing(true) }}
+            className="text-xs px-3 py-1.5 rounded-xl font-semibold transition-all"
+            style={{ background: goal.color + "18", color: goal.color }}>
+            Atualizar valor
+          </button>
+        </div>
+      )}
+
+      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+        {pct >= 100
+          ? "🎉 Meta atingida!"
+          : `Faltam R$ ${fmt(goal.target_amount - goal.current_amount)}`}
+      </p>
+    </Card>
+  )
+}
+
+function GoalsTab({ goals, loading, onUpdate, onRemove, onAdd }: {
+  goals: SavingsGoal[]
+  loading: boolean
+  onUpdate: (id: string, amount: number) => void
+  onRemove: (id: string) => void
+  onAdd: () => void
+}) {
+  if (loading) return <p className="text-sm text-center py-4" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
+  return (
+    <div className="space-y-3">
+      {goals.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-3xl mb-2">🏦</p>
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Nenhuma meta ainda.</p>
+        </div>
+      )}
+      {goals.map(goal => (
+        <GoalCard key={goal.id} goal={goal} onUpdate={onUpdate} onRemove={onRemove} />
+      ))}
+      <button onClick={onAdd}
+        className="w-full p-4 rounded-2xl flex items-center justify-center gap-2 text-sm hover:opacity-70 transition-opacity"
+        style={{ border: "2px dashed var(--card-border)", color: "var(--muted-foreground)" }}>
+        <TrendingUp size={15} /> Nova meta financeira
+      </button>
+    </div>
+  )
+}
+
 export default function UsPage() {
   const now = new Date()
   const [tab, setTab] = useState<"tarefas" | "contas" | "diario">("tarefas")
@@ -209,7 +320,7 @@ export default function UsPage() {
 
   const { tasks: sharedTasks, loading: tasksLoading, add: addSharedTask, toggle: toggleTask, remove: removeTask } = useSharedTasks()
   const { transactions, loading: txLoading, add: addTx, remove: removeTx } = useTransactions(displayMonthIdx, displayYear)
-  const { goals, loading: goalsLoading, add: addGoal, remove: removeGoal } = useSavingsGoals()
+  const { goals, loading: goalsLoading, add: addGoal, updateAmount, remove: removeGoal } = useSavingsGoals()
   const { entries, add: addEntry, remove: removeEntry } = useDiary()
 
   const totalIncome = transactions.filter(t => t.type === "entrada").reduce((s, t) => s + t.amount, 0)
@@ -456,43 +567,13 @@ export default function UsPage() {
           )}
 
           {financeTab === "metas" && (
-            <div className="space-y-3">
-              {goalsLoading ? (
-                <p className="text-sm text-center py-4" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
-              ) : goals.map(goal => {
-                const pct = Math.round((goal.current_amount / goal.target_amount) * 100)
-                return (
-                  <Card key={goal.id} className="!p-4 group">
-                    <div className="flex items-start justify-between mb-3">
-                      <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{goal.label}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold" style={{ color: goal.color }}>{pct}%</span>
-                        <button onClick={() => removeGoal(goal.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all"
-                          style={{ color: "var(--dusty-rose)" }}>
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="h-3 rounded-full overflow-hidden mb-2" style={{ background: "var(--muted)" }}>
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: goal.color }} />
-                    </div>
-                    <div className="flex justify-between text-xs" style={{ color: "var(--muted-foreground)" }}>
-                      <span>R$ {goal.current_amount.toLocaleString("pt-BR")}</span>
-                      <span>R$ {goal.target_amount.toLocaleString("pt-BR")}</span>
-                    </div>
-                    <p className="text-xs mt-2" style={{ color: "var(--muted-foreground)" }}>
-                      Faltam R$ {(goal.target_amount - goal.current_amount).toLocaleString("pt-BR")}
-                    </p>
-                  </Card>
-                )
-              })}
-              <button onClick={() => setAddingGoal(true)}
-                className="w-full p-4 rounded-2xl flex items-center justify-center gap-2 text-sm hover:opacity-70 transition-opacity"
-                style={{ border: "2px dashed var(--card-border)", color: "var(--muted-foreground)" }}>
-                <TrendingUp size={15} /> Nova meta financeira
-              </button>
-            </div>
+            <GoalsTab
+              goals={goals}
+              loading={goalsLoading}
+              onUpdate={updateAmount}
+              onRemove={removeGoal}
+              onAdd={() => setAddingGoal(true)}
+            />
           )}
         </div>
       )}
