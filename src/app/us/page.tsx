@@ -1,9 +1,10 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, Circle, Plus, TrendingUp, BookHeart, ChevronLeft, ChevronRight, X, ArrowDownLeft, ArrowUpRight, Trash2 } from "lucide-react"
+import { CheckCircle2, Circle, Plus, TrendingUp, BookHeart, ChevronLeft, ChevronRight, X, ArrowDownLeft, ArrowUpRight, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import { useState } from "react"
-import { useSharedTasks } from "@/hooks/use-shared-tasks"
+import { useSharedTasks, SharedTask } from "@/hooks/use-shared-tasks"
+import { useSharedProjects, SharedProject } from "@/hooks/use-shared-projects"
 import { useTransactions } from "@/hooks/use-transactions"
 import { useSavingsGoals } from "@/hooks/use-savings-goals"
 import { useDiary } from "@/hooks/use-diary"
@@ -20,6 +21,270 @@ const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","A
 
 type TxType = "entrada" | "saída"
 type FinanceTab = "transacoes" | "categorias" | "metas"
+type TasksTab = "acoes" | "projetos"
+
+// ── Shared modals ──────────────────────────────────────────────────────────
+
+function WhoSelector({ who, onChange }: { who: string; onChange: (w: string) => void }) {
+  return (
+    <div>
+      <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Responsável</p>
+      <div className="flex gap-2">
+        {["B", "J", "BJ"].map(w => (
+          <button key={w} onClick={() => onChange(w)}
+            className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
+            style={{ background: who === w ? "var(--warm-brown)" : "var(--muted)", color: who === w ? "white" : "var(--muted-foreground)" }}>
+            {w === "BJ" ? "Casal" : w}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AddSharedTaskModal({ onClose, onAdd }: { onClose: () => void; onAdd: (title: string, who: string) => void }) {
+  const [title, setTitle] = useState("")
+  const [who, setWho] = useState("BJ")
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
+        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova ação do casal</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
+            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
+        </div>
+        <div className="space-y-3">
+          <input value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="O que precisa ser feito?" autoFocus
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
+            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), who), onClose())} />
+          <WhoSelector who={who} onChange={setWho} />
+          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), who); onClose() } }}
+            disabled={!title.trim()}
+            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+            style={{ background: "var(--soft-orange)" }}>
+            Adicionar ação
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AddSharedProjectModal({ onClose, onAdd }: {
+  onClose: () => void
+  onAdd: (title: string, who: string, outcome: string) => void
+}) {
+  const [title, setTitle] = useState("")
+  const [who, setWho] = useState("BJ")
+  const [outcome, setOutcome] = useState("")
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
+        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Novo projeto do casal</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
+            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
+        </div>
+        <div className="space-y-3">
+          <input value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="Nome do projeto" autoFocus
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
+          <input value={outcome} onChange={e => setOutcome(e.target.value)}
+            placeholder="Resultado desejado (opcional)"
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }} />
+          <WhoSelector who={who} onChange={setWho} />
+          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), who, outcome.trim()); onClose() } }}
+            disabled={!title.trim()}
+            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+            style={{ background: "var(--golden)" }}>
+            Criar projeto
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AddTaskToProjectModal({ project, onClose, onAdd }: {
+  project: SharedProject
+  onClose: () => void
+  onAdd: (title: string, who: string) => void
+}) {
+  const [title, setTitle] = useState("")
+  const [who, setWho] = useState(project.who)
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
+        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova ação</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
+            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
+        </div>
+        <p className="text-xs mb-4" style={{ color: "var(--muted-foreground)" }}>Projeto: {project.title}</p>
+        <div className="space-y-3">
+          <input value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="O que precisa ser feito?" autoFocus
+            className="w-full text-sm p-3 rounded-xl outline-none"
+            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
+            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), who), onClose())} />
+          <WhoSelector who={who} onChange={setWho} />
+          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), who); onClose() } }}
+            disabled={!title.trim()}
+            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+            style={{ background: "var(--golden)" }}>
+            Adicionar ação
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Who avatar chips ────────────────────────────────────────────────────────
+
+function WhoAvatars({ who }: { who: string }) {
+  return (
+    <div className="flex gap-0.5">
+      {who.includes("B") && (
+        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+          style={{ background: "var(--dusty-rose)" }}>B</div>
+      )}
+      {who.includes("J") && (
+        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+          style={{ background: "var(--sky-blue)" }}>J</div>
+      )}
+    </div>
+  )
+}
+
+// ── Shared Project Card ─────────────────────────────────────────────────────
+
+function SharedProjectCard({ p, tasks, onAddTask, onToggle, onRemoveTask, onRemove }: {
+  p: SharedProject
+  tasks: SharedTask[]
+  onAddTask: (title: string, who: string) => void
+  onToggle: (id: string, done: boolean) => void
+  onRemoveTask: (id: string) => void
+  onRemove: () => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [addingTask, setAddingTask] = useState(false)
+
+  const projectTasks = tasks.filter(t => t.project_id === p.id)
+  const doneTasks = projectTasks.filter(t => t.done).length
+  const pct = projectTasks.length > 0 ? Math.round((doneTasks / projectTasks.length) * 100) : 0
+  const nextAction = projectTasks.find(t => !t.done)
+  const projectColor = "var(--golden)"
+
+  return (
+    <>
+      <Card className="group">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold mt-0.5" style={{ color: "var(--foreground)" }}>{p.title}</h3>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <WhoAvatars who={p.who} />
+            <span className="text-sm font-bold" style={{ color: projectColor }}>{pct}%</span>
+            <button onClick={onRemove}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all"
+              style={{ color: "var(--dusty-rose)" }}>
+              <Trash2 size={12} />
+            </button>
+          </div>
+        </div>
+
+        {p.outcome && (
+          <p className="text-xs mb-2" style={{ color: "var(--muted-foreground)" }}>→ {p.outcome}</p>
+        )}
+
+        <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "var(--muted)" }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: projectColor }} />
+        </div>
+
+        {!expanded && (
+          nextAction ? (
+            <div className="flex items-center gap-2 p-2.5 rounded-xl mb-3" style={{ background: "var(--muted)" }}>
+              <Circle size={12} style={{ color: projectColor, flexShrink: 0 }} />
+              <p className="text-xs flex-1 truncate" style={{ color: "var(--foreground)" }}>{nextAction.title}</p>
+              <WhoAvatars who={nextAction.who} />
+            </div>
+          ) : projectTasks.length > 0 ? (
+            <p className="text-xs text-center py-1 mb-3" style={{ color: "var(--sage)" }}>✓ Todas as ações concluídas!</p>
+          ) : null
+        )}
+
+        {expanded && (
+          <div className="space-y-1 mb-3">
+            {projectTasks.length === 0 && (
+              <p className="text-xs text-center py-2" style={{ color: "var(--muted-foreground)" }}>
+                Nenhuma ação ainda. Adicione abaixo.
+              </p>
+            )}
+            {projectTasks.map(task => (
+              <div key={task.id}
+                className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors group/task">
+                <button onClick={() => onToggle(task.id, !task.done)} className="flex-shrink-0">
+                  {task.done
+                    ? <CheckCircle2 size={16} style={{ color: "var(--sage)" }} />
+                    : <Circle size={16} style={{ color: "var(--card-border)" }} />
+                  }
+                </button>
+                <span className={`text-sm flex-1 min-w-0 truncate ${task.done ? "line-through" : ""}`}
+                  style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
+                  {task.title}
+                </span>
+                <WhoAvatars who={task.who} />
+                <button onClick={() => onRemoveTask(task.id)}
+                  className="opacity-0 group-hover/task:opacity-100 p-1 rounded-lg transition-all flex-shrink-0"
+                  style={{ color: "var(--dusty-rose)" }}>
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            ))}
+            <button onClick={() => setAddingTask(true)}
+              className="flex items-center gap-2 w-full px-2 py-2 rounded-xl hover:bg-[var(--muted)] transition-colors"
+              style={{ color: projectColor }}>
+              <Plus size={14} />
+              <span className="text-xs font-semibold">Adicionar ação</span>
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+            {doneTasks}/{projectTasks.length} ações
+          </span>
+          <button onClick={() => setExpanded(e => !e)}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg hover:bg-[var(--muted)] transition-colors"
+            style={{ color: "var(--muted-foreground)" }}>
+            {expanded ? <><ChevronUp size={13} /> Recolher</> : <><ChevronDown size={13} /> Ver ações</>}
+          </button>
+        </div>
+      </Card>
+
+      {addingTask && (
+        <AddTaskToProjectModal
+          project={p}
+          onClose={() => setAddingTask(false)}
+          onAdd={onAddTask}
+        />
+      )}
+    </>
+  )
+}
+
+// ── Finance modals ──────────────────────────────────────────────────────────
 
 function AddTransactionModal({ onClose, onAdd }: {
   onClose: () => void
@@ -83,65 +348,11 @@ function AddTransactionModal({ onClose, onAdd }: {
               ))}
             </div>
           </div>
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Quem</p>
-            <div className="flex gap-2">
-              {["B", "J", "BJ"].map(w => (
-                <button key={w} onClick={() => setWho(w)}
-                  className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: who === w ? "var(--warm-brown)" : "var(--muted)", color: who === w ? "white" : "var(--muted-foreground)" }}>
-                  {w === "BJ" ? "Casal" : w}
-                </button>
-              ))}
-            </div>
-          </div>
+          <WhoSelector who={who} onChange={setWho} />
           <button onClick={submit} disabled={!description.trim() || !amount}
             className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
             style={{ background: type === "saída" ? "var(--dusty-rose)" : "var(--sage)" }}>
             Adicionar lançamento
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function AddSharedTaskModal({ onClose, onAdd }: { onClose: () => void; onAdd: (title: string, who: string) => void }) {
-  const [title, setTitle] = useState("")
-  const [who, setWho] = useState("BJ")
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-sm rounded-3xl p-5 animate-grow max-h-[85dvh] overflow-y-auto"
-        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-base font-bold" style={{ color: "var(--warm-brown)" }}>Nova tarefa do casal</p>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
-            style={{ color: "var(--muted-foreground)" }}><X size={16} /></button>
-        </div>
-        <div className="space-y-3">
-          <input value={title} onChange={e => setTitle(e.target.value)}
-            placeholder="O que precisa ser feito?" autoFocus
-            className="w-full text-sm p-3 rounded-xl outline-none"
-            style={{ background: "var(--muted)", color: "var(--foreground)", border: "none" }}
-            onKeyDown={e => e.key === "Enter" && title.trim() && (onAdd(title.trim(), who), onClose())} />
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Responsável</p>
-            <div className="flex gap-2">
-              {["B", "J", "BJ"].map(w => (
-                <button key={w} onClick={() => setWho(w)}
-                  className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: who === w ? "var(--warm-brown)" : "var(--muted)", color: who === w ? "white" : "var(--muted-foreground)" }}>
-                  {w === "BJ" ? "Casal" : w}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button onClick={() => { if (title.trim()) { onAdd(title.trim(), who); onClose() } }}
-            disabled={!title.trim()}
-            className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
-            style={{ background: "var(--soft-orange)" }}>
-            Adicionar
           </button>
         </div>
       </div>
@@ -225,29 +436,19 @@ function GoalCard({ goal, onUpdate, onRemove }: {
           </button>
         </div>
       </div>
-
       <div className="h-3 rounded-full overflow-hidden mb-3" style={{ background: "var(--muted)" }}>
         <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: goal.color }} />
       </div>
-
-      {/* Valor atual / edição */}
       {editing ? (
         <div className="flex items-center gap-2 p-2.5 rounded-xl mb-2" style={{ background: "var(--muted)" }}>
           <span className="text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>R$</span>
-          <input
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
+          <input value={inputValue} onChange={e => setInputValue(e.target.value)}
             onKeyDown={e => e.key === "Enter" && save()}
-            type="number"
-            autoFocus
+            type="number" autoFocus
             className="flex-1 text-sm font-bold outline-none bg-transparent"
-            style={{ color: "var(--foreground)" }}
-          />
-          <button onClick={save}
-            className="text-xs font-bold px-2.5 py-1 rounded-lg text-white"
-            style={{ background: goal.color }}>
-            Salvar
-          </button>
+            style={{ color: "var(--foreground)" }} />
+          <button onClick={save} className="text-xs font-bold px-2.5 py-1 rounded-lg text-white"
+            style={{ background: goal.color }}>Salvar</button>
           <button onClick={() => setEditing(false)} className="text-xs px-1.5"
             style={{ color: "var(--muted-foreground)" }}>✕</button>
         </div>
@@ -266,11 +467,8 @@ function GoalCard({ goal, onUpdate, onRemove }: {
           </button>
         </div>
       )}
-
       <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-        {pct >= 100
-          ? "🎉 Meta atingida!"
-          : `Faltam R$ ${fmt(goal.target_amount - goal.current_amount)}`}
+        {pct >= 100 ? "🎉 Meta atingida!" : `Faltam R$ ${fmt(goal.target_amount - goal.current_amount)}`}
       </p>
     </Card>
   )
@@ -304,13 +502,17 @@ function GoalsTab({ goals, loading, onUpdate, onRemove, onAdd }: {
   )
 }
 
+// ── Page ────────────────────────────────────────────────────────────────────
+
 export default function UsPage() {
   const now = new Date()
   const [tab, setTab] = useState<"tarefas" | "contas" | "diario">("tarefas")
+  const [tasksTab, setTasksTab] = useState<TasksTab>("acoes")
   const [financeTab, setFinanceTab] = useState<FinanceTab>("transacoes")
   const [monthOffset, setMonthOffset] = useState(0)
   const [addingTx, setAddingTx] = useState(false)
   const [addingTask, setAddingTask] = useState(false)
+  const [addingProject, setAddingProject] = useState(false)
   const [addingGoal, setAddingGoal] = useState(false)
   const [diaryText, setDiaryText] = useState("")
   const [activeAuthor, setActiveAuthor] = useState<"B" | "J">("B")
@@ -319,9 +521,12 @@ export default function UsPage() {
   const displayYear = now.getFullYear() + Math.floor((now.getMonth() + monthOffset) / 12)
 
   const { tasks: sharedTasks, loading: tasksLoading, add: addSharedTask, toggle: toggleTask, remove: removeTask } = useSharedTasks()
+  const { projects, loading: projectsLoading, add: addProject, remove: removeProject } = useSharedProjects()
   const { transactions, loading: txLoading, add: addTx, remove: removeTx } = useTransactions(displayMonthIdx, displayYear)
   const { goals, loading: goalsLoading, add: addGoal, updateAmount, remove: removeGoal } = useSavingsGoals()
   const { entries, add: addEntry, remove: removeEntry } = useDiary()
+
+  const standaloneTasks = sharedTasks.filter(t => !t.project_id)
 
   const totalIncome = transactions.filter(t => t.type === "entrada").reduce((s, t) => s + t.amount, 0)
   const totalExpenses = transactions.filter(t => t.type === "saída").reduce((s, t) => s + t.amount, 0)
@@ -334,15 +539,8 @@ export default function UsPage() {
   }).filter(c => c.spent > 0)
 
   const fmt = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso + "T00:00:00")
-    return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`
-  }
-  const formatEntryDate = (iso: string) => {
-    const d = new Date(iso)
-    return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`
-  }
+  const formatDate = (iso: string) => { const d = new Date(iso + "T00:00:00"); return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}` }
+  const formatEntryDate = (iso: string) => { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}` }
 
   return (
     <div className="animate-fade-in space-y-5">
@@ -373,50 +571,102 @@ export default function UsPage() {
 
       {/* ── Tarefas ── */}
       {tab === "tarefas" && (
-        <div className="animate-fade-in space-y-3">
-          <Card>
-            {tasksLoading ? (
-              <p className="text-sm text-center py-4" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {sharedTasks.map(task => (
-                  <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--muted)] transition-colors group">
-                    <button onClick={() => toggleTask(task.id, !task.done)} className="flex-shrink-0">
-                      {task.done
-                        ? <CheckCircle2 size={18} style={{ color: "var(--sage)" }} />
-                        : <Circle size={18} style={{ color: "var(--card-border)" }} />
-                      }
-                    </button>
-                    <span className={`text-sm flex-1 ${task.done ? "line-through" : ""}`}
-                      style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
-                      {task.title}
-                    </span>
-                    <div className="flex gap-1 flex-shrink-0">
-                      {task.who.includes("B") && (
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                          style={{ background: "var(--dusty-rose)" }}>B</div>
-                      )}
-                      {task.who.includes("J") && (
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                          style={{ background: "var(--sky-blue)" }}>J</div>
-                      )}
-                    </div>
-                    <button onClick={() => removeTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all flex-shrink-0"
-                      style={{ color: "var(--dusty-rose)" }}>
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
+        <div className="animate-fade-in space-y-4">
+          {/* Sub-tabs: Ações / Projetos */}
+          <div className="flex gap-1 p-1 rounded-xl" style={{ background: "var(--muted)" }}>
+            {([
+              { id: "acoes", label: "Ações" },
+              { id: "projetos", label: "Projetos" },
+            ] as { id: TasksTab; label: string }[]).map(t => (
+              <button key={t.id} onClick={() => setTasksTab(t.id)}
+                className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  background: tasksTab === t.id ? "var(--card)" : "transparent",
+                  color: tasksTab === t.id ? "var(--warm-brown)" : "var(--muted-foreground)",
+                  boxShadow: tasksTab === t.id ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Ações avulsas */}
+          {tasksTab === "acoes" && (
+            <>
+              <div className="flex justify-end">
                 <button onClick={() => setAddingTask(true)}
-                  className="flex items-center gap-2 p-3 rounded-xl hover:bg-[var(--muted)] transition-colors w-full"
-                  style={{ color: "var(--muted-foreground)" }}>
-                  <Plus size={16} />
-                  <span className="text-sm">Adicionar tarefa</span>
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
+                  style={{ background: "var(--soft-orange)" }}>
+                  <Plus size={15} /> Nova ação
                 </button>
               </div>
-            )}
-          </Card>
+              <Card>
+                {tasksLoading ? (
+                  <p className="text-sm text-center py-4" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
+                ) : standaloneTasks.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-2xl mb-2">✅</p>
+                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Nenhuma ação ainda.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    {standaloneTasks.map(task => (
+                      <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--muted)] transition-colors group">
+                        <button onClick={() => toggleTask(task.id, !task.done)} className="flex-shrink-0">
+                          {task.done
+                            ? <CheckCircle2 size={18} style={{ color: "var(--sage)" }} />
+                            : <Circle size={18} style={{ color: "var(--card-border)" }} />
+                          }
+                        </button>
+                        <span className={`text-sm flex-1 ${task.done ? "line-through" : ""}`}
+                          style={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}>
+                          {task.title}
+                        </span>
+                        <WhoAvatars who={task.who} />
+                        <button onClick={() => removeTask(task.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all flex-shrink-0"
+                          style={{ color: "var(--dusty-rose)" }}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
+
+          {/* Projetos */}
+          {tasksTab === "projetos" && (
+            <>
+              <div className="flex justify-end">
+                <button onClick={() => setAddingProject(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
+                  style={{ background: "var(--golden)" }}>
+                  <Plus size={15} /> Novo projeto
+                </button>
+              </div>
+              {projectsLoading ? (
+                <p className="text-sm text-center py-4" style={{ color: "var(--muted-foreground)" }}>Carregando...</p>
+              ) : projects.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-3xl mb-2">📁</p>
+                  <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Nenhum projeto ainda.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projects.map(p => (
+                    <SharedProjectCard key={p.id} p={p} tasks={sharedTasks}
+                      onAddTask={(title, who) => addSharedTask(title, who, p.id)}
+                      onToggle={toggleTask}
+                      onRemoveTask={removeTask}
+                      onRemove={() => removeProject(p.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -511,14 +761,7 @@ export default function UsPage() {
                           {tx.type === "entrada" ? "+" : "-"}R$ {fmt(tx.amount)}
                         </p>
                         <div className="flex gap-0.5 justify-end mt-0.5">
-                          {tx.who.includes("B") && (
-                            <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
-                              style={{ background: "var(--dusty-rose)" }}>B</div>
-                          )}
-                          {tx.who.includes("J") && (
-                            <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
-                              style={{ background: "var(--sky-blue)" }}>J</div>
-                          )}
+                          <WhoAvatars who={tx.who} />
                         </div>
                       </div>
                       <button onClick={() => removeTx(tx.id)}
@@ -567,13 +810,7 @@ export default function UsPage() {
           )}
 
           {financeTab === "metas" && (
-            <GoalsTab
-              goals={goals}
-              loading={goalsLoading}
-              onUpdate={updateAmount}
-              onRemove={removeGoal}
-              onAdd={() => setAddingGoal(true)}
-            />
+            <GoalsTab goals={goals} loading={goalsLoading} onUpdate={updateAmount} onRemove={removeGoal} onAdd={() => setAddingGoal(true)} />
           )}
         </div>
       )}
@@ -596,19 +833,12 @@ export default function UsPage() {
                 ))}
               </div>
             </div>
-            <textarea
-              value={diaryText}
-              onChange={e => setDiaryText(e.target.value)}
+            <textarea value={diaryText} onChange={e => setDiaryText(e.target.value)}
               placeholder="O que aconteceu de bom hoje? Um momento, uma lembrança... 🌿"
               className="w-full text-sm resize-none outline-none bg-transparent"
-              style={{ color: "var(--foreground)", minHeight: 72 }}
-            />
+              style={{ color: "var(--foreground)", minHeight: 72 }} />
             <button
-              onClick={async () => {
-                if (!diaryText.trim()) return
-                await addEntry(diaryText.trim(), activeAuthor)
-                setDiaryText("")
-              }}
+              onClick={async () => { if (!diaryText.trim()) return; await addEntry(diaryText.trim(), activeAuthor); setDiaryText("") }}
               disabled={!diaryText.trim()}
               className="mt-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
               style={{ background: activeAuthor === "B" ? "var(--dusty-rose)" : "var(--sky-blue)" }}>
@@ -639,24 +869,10 @@ export default function UsPage() {
         </div>
       )}
 
-      {addingTx && (
-        <AddTransactionModal
-          onClose={() => setAddingTx(false)}
-          onAdd={tx => addTx(tx)}
-        />
-      )}
-      {addingTask && (
-        <AddSharedTaskModal
-          onClose={() => setAddingTask(false)}
-          onAdd={(title, who) => addSharedTask(title, who)}
-        />
-      )}
-      {addingGoal && (
-        <AddGoalModal
-          onClose={() => setAddingGoal(false)}
-          onAdd={(label, target, color) => addGoal({ label, target_amount: target, color })}
-        />
-      )}
+      {addingTx && <AddTransactionModal onClose={() => setAddingTx(false)} onAdd={tx => addTx(tx)} />}
+      {addingTask && <AddSharedTaskModal onClose={() => setAddingTask(false)} onAdd={(title, who) => addSharedTask(title, who)} />}
+      {addingProject && <AddSharedProjectModal onClose={() => setAddingProject(false)} onAdd={(title, who, outcome) => addProject(title, who, outcome)} />}
+      {addingGoal && <AddGoalModal onClose={() => setAddingGoal(false)} onAdd={(label, target, color) => addGoal({ label, target_amount: target, color })} />}
     </div>
   )
 }

@@ -8,6 +8,7 @@ export type SharedTask = {
   title: string
   done: boolean
   who: string
+  project_id: string | null
   created_at: string
 }
 
@@ -28,10 +29,10 @@ export function useSharedTasks() {
     load()
   }, [])
 
-  const add = async (title: string, who: string) => {
+  const add = async (title: string, who: string, project_id?: string | null) => {
     const { data, error } = await supabase
       .from("shared_tasks")
-      .insert({ title, who, done: false })
+      .insert({ title, who, done: false, project_id: project_id ?? null })
       .select()
       .single()
     if (!error && data) setTasks(prev => [data, ...prev])
